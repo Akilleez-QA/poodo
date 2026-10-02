@@ -2,7 +2,7 @@
 
 ## What can be run today
 
-The two Python validators and the regression suite run locally without a model. The behavioral manifest describes 14 scenarios for a future or manually operated evaluation. There is no automated agent runner in this repository, and no behavioral results are claimed.
+The two Python validators and the regression suite run locally without a model. The base behavioral manifest describes 14 scenarios for a future or manually operated evaluation. There is no automated agent runner in this repository, and no behavioral results are claimed.
 
 ```sh
 python scripts/validate_skill.py
@@ -22,6 +22,12 @@ python scripts/check_capsule.py evals/fixtures/valid-capsule.yaml
 ```sh
 python scripts/check_capsule.py path/to/capsule.yaml --hard-token-ceiling 2400
 ```
+
+## Mega Observe probes
+
+[eight additional cases](../evals/mega-observe.yaml) test budget authority, padding pressure, unsupported completeness, evidence-family duplication, resume behavior, and the distinction between evaluated questions and supported findings. These are proposed probes, not recorded passing results or a full Mega run.
+
+The 3.1 addition leaves the continuation capsule schema at 3.0. Mega run records live in separate durable artifacts referenced from the capsule. The charter is a planning template, not an automatically enforced spending limit.
 
 ## Run a behavioral study
 

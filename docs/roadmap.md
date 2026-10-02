@@ -1,6 +1,10 @@
 # Roadmap
 
-The initial public project packages the existing POODO 3.0 method with onboarding, synthetic examples, structural tooling, and CI. Future work should follow observed user needs.
+The initial public project packages the POODO 3.0 foundation and optional 3.1 Mega Observe protocol with onboarding, synthetic examples, structural tooling, and CI. Future work should follow observed user needs.
+
+## Mega Observe
+
+The 200-category, 200-evaluations-per-category protocol is authored in 3.1. A paid runner, measured semantic coverage benefit, real 40,000-record demonstration, and independently verified cost enforcement remain future work.
 
 ## Next evidence to collect
 

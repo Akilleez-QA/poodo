@@ -2,10 +2,10 @@
 name: poodo
 description: Structure consequential or ambiguous decisions, investigations, strategy, and improvement through a continuity-aware Pontificate-Observe-Orient-Decide-Orchestrate loop. Use only when explicitly invoked for rigorous evidence separation, adversarial assumption testing, agentic orchestration, and verified learning. Do not use for simple facts or routine execution.
 metadata:
-  version: "3.0"
+  version: "3.1"
 ---
 
-# POODO 3.0
+# POODO 3.1
 
 Move ambiguity toward a justified decision and either a verified outcome or an explicit verification boundary. POODO is an epistemic control loop, not a checklist or a performance of named methodologies.
 
@@ -42,6 +42,12 @@ Before crossing each stage boundary, apply the checkpoint and barrier semantics 
 For native Codex CLI or Desktop goal work, apply [goal-integration.md](references/goal-integration.md) at entry, every stage transition, compaction/handoff, resume, contradiction, and termination.
 
 Choose only operations that answer a necessary question or improve discrimination. Read [method-selection.md](references/method-selection.md); named methods are optional examples, never completion requirements.
+
+## Optional Mega Observe (expensive)
+
+Only when the user explicitly selects **Mega Observe**, read [mega-observe.md](references/mega-observe.md) before Observe. Target a broad, traceable web investigation organized into **200 materially distinct categories, each evaluated in 200 materially distinct ways**: 40,000 substantive evaluation records. Preserve the no-padding quality gate; fewer defensible categories or evaluations means an incomplete run, never fabricated completion.
+
+Agree on the problem, accessible search scope, and a spend/resource ceiling before launching this mode. It can require substantial inference, retrieval, and review, potentially hundreds of dollars; estimate from the selected environment rather than promising a price. No host can prove it searched the entire internet. Report coverage, exclusions, uncertainty, and unresolved regions. More records and more spending do not establish completeness or truth. The standard loop remains the default, and the 20-path Orient requirement still applies after Mega Observe.
 
 ## Conditional routing
 

@@ -6,7 +6,7 @@ Describe the concrete problem, proposed behavior, and evidence that would distin
 
 Follow the [setup and checks](docs/getting-started.md). Python tooling depends only on the standard library and pinned PyYAML. Run the package validator and regression suite before submitting a change.
 
-Preserve explicit invocation and the existing 3.0 method unless proposing a clearly identified method revision. Explain effects on evidence separation, authority, research, divergence, contradiction handling, and continuity. Keep client-specific capabilities conditional on actual availability.
+Preserve explicit invocation and the existing method and optional-mode boundary unless proposing a clearly identified method revision. Explain effects on evidence separation, authority, research, divergence, contradiction handling, and continuity. Keep client-specific capabilities conditional on actual availability.
 
 For checker fixes, include a minimal failing input and a regression test with meaningful assertions. For behavioral claims, follow the [evaluation guide](docs/evaluation.md); passing syntax checks is insufficient.
 

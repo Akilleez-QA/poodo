@@ -34,6 +34,10 @@ Propose a decision and verification plan; do not change production.
 
 Expect a short framing exchange, evidence gathering, alternatives, and an explicit decision or evidence boundary. POODO can summarize the decision without printing every internal working artifact or all 20 paths.
 
+## Request Mega Observe
+
+See the [full protocol](../references/mega-observe.md) and [example](../examples/mega-observe.md). Request this mode by name and establish the problem, scope, resource ceiling, and quality contract before launching it. Installing POODO does not start research or authorize spending.
+
 ## Check the package
 
 From the checkout root:
