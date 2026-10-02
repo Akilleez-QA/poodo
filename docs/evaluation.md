@@ -17,7 +17,7 @@ python scripts/check_capsule.py evals/fixtures/valid-capsule.yaml
 | Regression tests | Named checker cases behave as asserted | General robustness or better agent decisions |
 | Behavioral comparison | Only what the recorded trials and grading support | Universal reliability or transfer to untested models |
 
-`check_capsule.py` expects the YAML payload without continuation delimiters. Exit codes are `0` for a pass, `1` for invalid structure, and `2` for a loading error. Its default size ceiling is a rough character-based estimate of 1,800 tokens, not a tokenizer measurement. Unlike the method's soft target, the CLI ceiling is enforced even if `capsule_overflow` is present. To inspect a larger capsule without deleting critical state, explicitly choose a larger budget:
+`check_capsule.py` expects the YAML payload without continuation delimiters. Exit codes are `0` for a pass, `1` for invalid structure, and `2` for a loading error. Its default size ceiling is a rough character-based estimate of 1,800 tokens, not a tokenizer measurement. Consistent with the method's soft ceiling, an oversize capsule passes the size check only if it declares a non-empty `capsule_overflow` describing what could not safely fit; otherwise it is rejected. To inspect a larger capsule without that declaration, explicitly choose a larger budget:
 
 ```sh
 python scripts/check_capsule.py path/to/capsule.yaml --hard-token-ceiling 2400
@@ -40,7 +40,7 @@ Use [the run-record template](../evals/run-record.template.yaml) to capture the 
 Known protocol questions to resolve prospectively:
 
 - The `proportional-low-stakes` case asks for a simple rename and forbids extensive research; full POODO requires research. Treat it as a scope-routing case that should decline the full loop, and freeze that interpretation before trials. If evaluating mandatory full-loop invocation instead, revise the case in a separately versioned manifest.
-- Not every rubric dimension is relevant to every scenario, but the current manifest does not explicitly permit N/A. Define applicability before scoring rather than changing denominators after seeing outputs.
+- Not every rubric dimension is relevant to every scenario. A case may list `not_applicable` dimensions in the manifest; this must be frozen before any trial is scored, and those dimensions are excluded from that case's denominator. No other N/A is allowed, and none may be added after seeing outputs.
 - These public cases are development material. Add held-out cases before making generalization claims.
 
 Record per-case and aggregate scores, catastrophic failures, uncertainty, cost, and proportionality regressions. The [proposed thresholds](../references/evaluation.md) are not evidence that POODO has met them.

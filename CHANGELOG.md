@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — tooling and evaluation-rule fixes
+
+- Capsule checker: an oversize capsule now passes the size check only when it declares a non-empty `capsule_overflow`, matching the method's soft ceiling. Add regression tests.
+- Rubric: define N/A via a per-case `not_applicable` manifest field frozen before scoring.
+
+No change to the method text or skill version.
+
 ## 3.1 — Optional Mega Observe — 2026-10-01
 
 - Add an explicit expensive research mode targeting 200 distinct categories and 200 distinct evaluations per category.

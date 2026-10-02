@@ -311,10 +311,12 @@ def validate(data: Any, raw_text: str, hard_token_ceiling: int = 1800) -> list[s
         errors.append("current_head: must reference an orientation, decision, prediction, or contradiction")
 
     approximate_tokens = (len(raw_text) + 3) // 4
-    if approximate_tokens > hard_token_ceiling:
+    overflow = data.get("capsule_overflow")
+    declared_overflow = isinstance(overflow, str) and bool(overflow.strip())
+    if approximate_tokens > hard_token_ceiling and not declared_overflow:
         errors.append(
-            f"size: approximately {approximate_tokens} tokens exceeds hard ceiling {hard_token_ceiling}; "
-            "emit capsule_overflow rather than silently deleting critical state"
+            f"size: approximately {approximate_tokens} tokens exceeds ceiling {hard_token_ceiling}; "
+            "emit a non-empty capsule_overflow rather than silently deleting critical state"
         )
     return errors
 

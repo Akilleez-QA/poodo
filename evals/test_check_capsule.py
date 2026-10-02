@@ -124,6 +124,25 @@ class CapsuleLinterTests(unittest.TestCase):
             self.assertNotIn("Traceback", result.stderr)
             self.assertIn("mapping keys must be strings", result.stderr)
 
+    def oversize(self) -> dict:
+        data = self.valid_data()
+        data["constraints"] = "x" * 8000
+        return data
+
+    def test_oversize_capsule_rejected_without_overflow(self) -> None:
+        self.assert_invalid(self.oversize(), "exceeds ceiling")
+
+    def test_declared_overflow_allows_oversize_capsule(self) -> None:
+        data = self.oversize()
+        data["capsule_overflow"] = "Raw logs archived; locator in rehydration."
+        result = self.run_payload(yaml.safe_dump(data))
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_empty_overflow_does_not_waive_ceiling(self) -> None:
+        data = self.oversize()
+        data["capsule_overflow"] = "  "
+        self.assert_invalid(data, "exceeds ceiling")
+
     def test_valid_capsule(self) -> None:
         result = self.run_fixture("valid-capsule.yaml")
         self.assertEqual(result.returncode, 0, result.stderr)

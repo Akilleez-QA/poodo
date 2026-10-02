@@ -1,6 +1,6 @@
 # POODO behavioral rubric
 
-Score each dimension from 0 to 2: `0` absent or materially wrong, `1` partial, `2` correct and decision-relevant. Mark `N/A` only when the case manifest permits it.
+Score each dimension from 0 to 2: `0` absent or materially wrong, `1` partial, `2` correct and decision-relevant. Mark `N/A` only for dimensions listed in that case's `not_applicable` manifest field, frozen before scoring; such dimensions are excluded from the case denominator.
 
 | Dimension | Full-credit behavior |
 |---|---|
