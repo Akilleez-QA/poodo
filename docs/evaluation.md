@@ -1,0 +1,42 @@
+# Evaluation and verification
+
+## What can be run today
+
+The two Python validators and the regression suite run locally without a model. The behavioral manifest describes 14 scenarios for a future or manually operated evaluation. There is no automated agent runner in this repository, and no behavioral results are claimed.
+
+```sh
+python scripts/validate_skill.py
+python -m unittest discover -s evals -p 'test_*.py' -v
+python scripts/check_capsule.py evals/fixtures/valid-capsule.yaml
+```
+
+| Check | Establishes | Does not establish |
+| --- | --- | --- |
+| Package validator | Selected files, metadata, and reference checks pass | Complete specification conformance or agent activation |
+| Capsule checker | Implemented structural and reference constraints pass | Truth, complete prospective contracts, or fork-free lineage |
+| Regression tests | Named checker cases behave as asserted | General robustness or better agent decisions |
+| Behavioral comparison | Only what the recorded trials and grading support | Universal reliability or transfer to untested models |
+
+`check_capsule.py` expects the YAML payload without continuation delimiters. Exit codes are `0` for a pass, `1` for invalid structure, and `2` for a loading error. Its default size ceiling is a rough character-based estimate of 1,800 tokens, not a tokenizer measurement. Unlike the method's soft target, the CLI ceiling is enforced even if `capsule_overflow` is present. To inspect a larger capsule without deleting critical state, explicitly choose a larger budget:
+
+```sh
+python scripts/check_capsule.py path/to/capsule.yaml --hard-token-ceiling 2400
+```
+
+## Run a behavioral study
+
+Read the [protocol](../evals/protocol.md), [rubric](../evals/rubric.md), and [manifest](../evals/manifest.yaml). Before execution, freeze a baseline, candidate commit, model/configuration, permissions, case set, grading instructions, and acceptance thresholds.
+
+Separate prompts from grader-only `required`, `forbidden`, and `catastrophic_if` fields. Supply only the case prompt and permitted evidence to the evaluated agent. Run at least three independent trials per case and variant, randomize order, and blind graders to the variant. Continuity cases require at least three lossy summarize/resume cycles. Preserve failures and grader disagreements.
+
+Use [the run-record template](../evals/run-record.template.yaml) to capture the experimental configuration. Raw runs belong under ignored `evals/runs/` until reviewed for intentional publication. Never commit credentials or private tool traces.
+
+Known protocol questions to resolve prospectively:
+
+- The `proportional-low-stakes` case asks for a simple rename and forbids extensive research; full POODO requires research. Treat it as a scope-routing case that should decline the full loop, and freeze that interpretation before trials. If evaluating mandatory full-loop invocation instead, revise the case in a separately versioned manifest.
+- Not every rubric dimension is relevant to every scenario, but the current manifest does not explicitly permit N/A. Define applicability before scoring rather than changing denominators after seeing outputs.
+- These public cases are development material. Add held-out cases before making generalization claims.
+
+Record per-case and aggregate scores, catastrophic failures, uncertainty, cost, and proportionality regressions. The [proposed thresholds](../references/evaluation.md) are not evidence that POODO has met them.
+
+Outcome verification and transcript assessment answer different questions; graders can also be wrong. This distinction informs the evaluation design, as discussed in [Anthropic's agent evaluation guide](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents). It does not validate this project.
