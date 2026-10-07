@@ -1,10 +1,5 @@
 # POODO
 
-![POODO ASCII Bantha with warm brown fur, ivory horns, and gold lettering](assets/branding/poodo-banner.svg)
-
-<details>
-<summary>Plain-text banner</summary>
-
 ```text
          ...            .=+*#**=.
       -*#**#%*:       =%%#+=--+#@%-   .::.
@@ -33,8 +28,6 @@
                         |  __/| |_| | |_| | |_| | |_| |
                         |_|    \___/ \___/|____/ \___/
 ```
-
-</details>
 
 **Pontificate → Observe → Orient → Decide → Orchestrate**
 
