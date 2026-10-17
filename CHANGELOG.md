@@ -5,6 +5,8 @@
 - Capsule checker: an oversize capsule now passes the size check only when it declares a non-empty `capsule_overflow`, matching the method's soft ceiling. Add regression tests.
 - Rubric: define N/A via a per-case `not_applicable` manifest field frozen before scoring.
 
+- Docs: README badges, one-line pitch, Install, Quick start and Development sections; add AGENTS.md for agent contributors.
+
 No change to the method text or skill version.
 
 ## 3.1 — Optional Mega Observe — 2026-10-01

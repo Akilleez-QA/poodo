@@ -29,6 +29,14 @@
                         |_|    \___/ \___/|____/ \___/
 ```
 
+[![Structural checks](https://img.shields.io/github/actions/workflow/status/Akilleez-QA/poodo/checks.yml?branch=main&style=flat-square&label=checks)](https://github.com/Akilleez-QA/poodo/actions/workflows/checks.yml)
+[![Skill version](https://img.shields.io/badge/skill-3.1-6e5aff?style=flat-square)](SKILL.md)
+[![Codex skill](https://img.shields.io/badge/Codex-%24poodo-121212?style=flat-square&logo=openai&logoColor=white)](docs/getting-started.md)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)](requirements-dev.txt)
+[![License: MIT](https://img.shields.io/github/license/Akilleez-QA/poodo?style=flat-square)](LICENSE)
+
+> **Make your agent show its evidence before it acts.** An explicit-invocation agent skill for decisions where being wrong is expensive.
+
 **Pontificate → Observe → Orient → Decide → Orchestrate**
 
 A reasoning and orchestration skill for consequential decisions, investigations, and ambiguous work. POODO asks an agent to separate what it knows from what it assumes, challenge its preferred explanation, and verify the outcome it was actually asked to achieve.
@@ -38,6 +46,29 @@ Frame the goal → Gather evidence → Explore alternatives → Commit → Act a
                        ↑                                         │
                        └────────── Learn from the outcome ───────┘
 ```
+
+## Install
+
+POODO is a skill directory, not a package. Clone the whole repository into your agent's skill path so relative references resolve:
+
+```sh
+mkdir -p "$HOME/.agents/skills"
+git clone https://github.com/Akilleez-QA/poodo.git "$HOME/.agents/skills/poodo"
+```
+
+Restart Codex if the skill doesn't appear. Update later with `git -C "$HOME/.agents/skills/poodo" pull --ff-only`. Other Agent Skills clients may use a different discovery path; see [getting started](docs/getting-started.md).
+
+## Quick start
+
+POODO never runs implicitly. Invoke it by name and give it a problem, an outcome and an authority boundary:
+
+```text
+Use $poodo to compare keeping our synchronous export process with moving it
+to a background queue. We want exports to finish reliably without blocking
+the app. Propose a decision and verification plan; do not change production.
+```
+
+Expect a short framing exchange, evidence gathering, alternatives, then an explicit decision or a stated evidence boundary.
 
 ## Start here
 
@@ -212,6 +243,18 @@ This initial public project contains the POODO 3.1 instructions, reference libra
 | `docs/` | Installation, concepts, evaluations, and roadmap |
 
 The skill follows the [Agent Skills directory format](https://agentskills.io/specification). Its host-specific guidance currently targets Codex; other clients require their own installation and capability checks.
+
+## Development
+
+```sh
+python3 -m venv .venv && . .venv/bin/activate
+python -m pip install -r requirements-dev.txt
+python scripts/validate_skill.py
+python -m unittest discover -s evals -p 'test_*.py' -v
+python scripts/check_capsule.py evals/fixtures/valid-capsule.yaml
+```
+
+These are structural checks only; they do not measure behavioral improvement. Agent contributors: read [AGENTS.md](AGENTS.md) first.
 
 ## Contribute
 
