@@ -219,8 +219,8 @@ Start with [CONTRIBUTING.md](CONTRIBUTING.md). Useful contributions include repr
 
 ## License
 
-[MIT](LICENSE). External sources linked from the references retain their own terms.
+[GPL-3.0-only](LICENSE). External sources linked from the references retain their own terms.
 
 ## Commercial licensing
 
-This project is available under the MIT License. If you want to use it in a product or service under different terms, commercial licenses are available from Refrigeration.AI. Contact craig@nh3.biz.
+This project is available under the GNU General Public License v3.0 only (GPL-3.0-only). If you want to use it in a product or service under different terms, commercial licenses are available from Refrigeration.AI. Contact craig@nh3.biz.
