@@ -1,0 +1,32 @@
+name: Feature request
+description: Propose an improvement to POODO instructions, documentation, or tooling.
+title: '[Proposal]: '
+labels: ['needs-triage', 'enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: 'See CONTRIBUTING.md. Share only synthetic or explicitly authorized examples; remove secrets, private paths, and personal information. Support claims with measurements or citations and mark unmeasured effects explicitly.'
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and concrete example
+      description: Explain the unmet need and what you tried with the current instructions or tooling.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior and placement
+      description: Describe the change and where it belongs, such as the skill, references, documentation, or checkers. Identify any method revision or change to explicit invocation or optional-mode boundaries.
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Compatibility, limits, and validation
+      description: Explain compatibility and capability requirements, how to evaluate the change, and what evidence would distinguish improvement from extra ceremony. Unknowns are fine.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives and tradeoffs
+      description: Describe other approaches considered and their tradeoffs.

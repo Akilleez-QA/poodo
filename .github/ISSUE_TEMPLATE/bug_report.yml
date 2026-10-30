@@ -1,0 +1,37 @@
+name: Bug report
+description: A reproducible POODO instruction, documentation, or checker defect.
+title: '[Bug]: '
+labels: ['needs-triage', 'bug']
+body:
+  - type: markdown
+    attributes:
+      value: 'See CONTRIBUTING.md. Separate observed failures from suspected causes. Share only synthetic or explicitly authorized examples; remove secrets, private paths, and personal information.'
+  - type: markdown
+    attributes:
+      value: 'For suspected vulnerabilities, contact craig@nh3.biz privately. Do not post sensitive details publicly.'
+  - type: textarea
+    id: problem
+    attributes:
+      label: Expected and actual behavior
+      description: Explain what should happen and what happens instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Include the relevant instruction or checker input and exact steps or commands. Use a sanitized example or trace.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Version and environment
+      description: Include the commit or version, affected file, and OS. For checker failures, include Python and PyYAML versions; for agent behavior, include the host, model, invocation, and available capabilities.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Include relevant output, checks run, and observed outcomes. Distinguish structural check results from behavioral claims and identify what remains untested.
