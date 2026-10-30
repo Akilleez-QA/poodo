@@ -8,7 +8,7 @@ Make your agent show its evidence before it acts: an explicit-invocation reasoni
 
 This initial public project contains the POODO 3.1 instructions, reference library, capsule checker, regression tests, 14 base behavioral evaluation cases, eight Mega Observe protocol probes, and synthetic examples. CI checks package structure and checker regressions.
 
-**Behavioral improvement is unmeasured.** There is no published baseline comparison or completed behavioral trial set. A passing checker does not demonstrate sound reasoning, truthful evidence, or a successful real-world outcome. See the [evaluation boundaries](docs/evaluation.md).
+**Behavioral improvement is unmeasured.** There is no published baseline comparison or completed behavioral trial set. A passing checker does not demonstrate sound reasoning, truthful evidence, or a successful real-world outcome. See the [evaluation boundaries](docs/guides/how-to/evaluation.md).
 
 ## Quickstart
 
@@ -19,7 +19,7 @@ python3 scripts/validate_skill.py
 python3 scripts/check_capsule.py evals/fixtures/valid-capsule.yaml
 ```
 
-Both commands check structure. They do not run a behavioral evaluation. See [Getting started](docs/getting-started.md) for installation and first use.
+Both commands check structure. They do not run a behavioral evaluation. See [Getting started](docs/guides/tutorials/getting-started.md) for installation and first use.
 
 ## What it does
 
@@ -154,7 +154,7 @@ Throughout, claim states stay separate: a report is not an observation, a passin
 | Native `/goal` binding (not shown) | [goal-integration.md](references/goal-integration.md) | Codex goal entry, stage sync, status semantics |
 | Choosing which operations to run | [method-selection.md](references/method-selection.md) | Matching an operation to the open question; Quick/Standard/Deep depth |
 
-Further reading: [How POODO works](docs/how-it-works.md) explains the reasoning behind each step, [Getting started](docs/getting-started.md) covers installation, and the [examples](examples/README.md) walk through [an architecture decision](examples/architecture-decision.md), [a deployment contradiction](examples/deployment-contradiction.md), [a continuity handoff](examples/continuity-handoff.md), and [a Mega Observe run](examples/mega-observe.md). The behavioral tests are in [evals/](evals/) ([manifest](evals/manifest.yaml), [rubric](evals/rubric.md), [protocol](evals/protocol.md)), and their design is in [evaluation.md](references/evaluation.md) and [docs/evaluation.md](docs/evaluation.md).
+Further reading: [How POODO works](docs/guides/explanation/how-it-works.md) explains the reasoning behind each step, [Getting started](docs/guides/tutorials/getting-started.md) covers installation, and the [examples](examples/README.md) walk through [an architecture decision](examples/architecture-decision.md), [a deployment contradiction](examples/deployment-contradiction.md), [a continuity handoff](examples/continuity-handoff.md), and [a Mega Observe run](examples/mega-observe.md). The behavioral tests are in [evals/](evals/) ([manifest](evals/manifest.yaml), [rubric](evals/rubric.md), [protocol](evals/protocol.md)), and their design is in [evaluation.md](references/evaluation.md) and [docs/guides/how-to/evaluation.md](docs/guides/how-to/evaluation.md).
 
 ### Use it deliberately
 
@@ -217,11 +217,12 @@ Literal coverage of the entire internet cannot be verified. The output must repo
 
 ## Documentation
 
-- [Install and invoke POODO](docs/getting-started.md)
-- [Understand the loop](docs/how-it-works.md)
+- [Documentation index](docs/README.md)
+- [Install and invoke POODO](docs/guides/tutorials/getting-started.md)
+- [Understand the loop](docs/guides/explanation/how-it-works.md)
 - [Explore examples](examples/README.md)
 - [Use Mega Observe: 200 categories × 200 evaluations](references/mega-observe.md)
-- [Run checks and design evaluations](docs/evaluation.md)
+- [Run checks and design evaluations](docs/guides/how-to/evaluation.md)
 - [Read the full skill](SKILL.md)
 
 ## Related projects

@@ -10,7 +10,7 @@ POODO is a set of instructions for an agent. Its purpose is to keep a decision t
 | Decide | What should happen under these constraints? | Commitment, tradeoffs, reversal conditions |
 | Orchestrate | How will authorized action produce and verify the outcome? | Work plan, prospective prediction, observations |
 
-Read the exact requirements in [SKILL.md](../SKILL.md); this introduction does not replace them.
+Read the exact requirements in [SKILL.md](../../../SKILL.md); this introduction does not replace them.
 
 ## Three distinctions that matter
 
@@ -28,7 +28,7 @@ When an observation contradicts a load-bearing prediction, narrow the claim befo
 
 ## Across sessions
 
-A continuation capsule preserves objective, authority, evidence locators, artifact identity, contradictions, and the next checkpoint. Re-read the required evidence when resuming. See [continuity and ledger](../references/continuity-and-ledger.md) for the schema.
+A continuation capsule preserves objective, authority, evidence locators, artifact identity, contradictions, and the next checkpoint. Re-read the required evidence when resuming. See [continuity and ledger](../../../references/continuity-and-ledger.md) for the schema.
 
 The checker validates a structural subset of one capsule. It cannot inspect the world behind evidence links or compare sibling capsule branches.
 

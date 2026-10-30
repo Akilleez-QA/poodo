@@ -38,4 +38,4 @@ This checklist describes review inputs for a maintainer; it does not authorize p
 2. Install the pinned development dependency in an isolated environment and run the commands documented in the verification matrix. Record any behavioral study separately from structural results.
 3. Reinspect counterpart pins and contract versions in the ICD when integration changes. Record compatibility gaps rather than inferring compatibility from version numbers.
 4. Have the maintainer review the exact source commit and evidence before any release or tag decision. Release/tag creation is outside this documentation rollout.
-5. Consumers should retain the selected source commit and their actual host configuration as a baseline. Preserve local edits before updating, following [Getting started](../getting-started.md).
+5. Consumers should retain the selected source commit and their actual host configuration as a baseline. Preserve local edits before updating, following [Getting started](../guides/tutorials/getting-started.md).
