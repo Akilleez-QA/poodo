@@ -2,6 +2,7 @@
 
 ## Unreleased — tooling and evaluation-rule fixes
 
+- Add root coding-agent guidance and weekly Dependabot checks for GitHub Actions and Python dependencies, with up to three open PRs per ecosystem.
 - Capsule checker: an oversize capsule now passes the size check only when it declares a non-empty `capsule_overflow`, matching the method's soft ceiling. Add regression tests.
 - Rubric: define N/A via a per-case `not_applicable` manifest field frozen before scoring.
 
