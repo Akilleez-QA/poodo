@@ -244,6 +244,10 @@ The skill follows the [Agent Skills directory format](https://agentskills.io/spe
 
 Start with [CONTRIBUTING.md](CONTRIBUTING.md). Useful contributions include reproducible failure cases, clearer examples, independently graded trials, and fixes to checker behavior. Changes to the reasoning method should explain the problem and include evidence for their intended effect.
 
+## Security
+
+Report vulnerabilities using [SECURITY.md](SECURITY.md). For other questions, see [SUPPORT.md](SUPPORT.md). Participation follows the [Code of conduct](CODE_OF_CONDUCT.md).
+
 ## License
 
 This project is available under the GNU General Public License v3.0 only (GPL-3.0-only). If you want to use it to create a product or service under different terms, commercial licenses are available from Refrigeration AI, Inc. Contact craig@nh3.biz.
