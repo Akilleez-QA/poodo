@@ -217,6 +217,8 @@ The skill follows the [Agent Skills directory format](https://agentskills.io/spe
 
 Start with [CONTRIBUTING.md](CONTRIBUTING.md). Useful contributions include reproducible failure cases, clearer examples, independently graded trials, and fixes to checker behavior. Changes to the reasoning method should explain the problem and include evidence for their intended effect.
 
+Follow the [Code of Conduct](CODE_OF_CONDUCT.md) and the [agent and contributor working rules](AGENTS.md). See [SUPPORT.md](SUPPORT.md) for help and [SECURITY.md](SECURITY.md) for private vulnerability reporting.
+
 ## License
 
 [MIT](LICENSE). External sources linked from the references retain their own terms.
