@@ -2,7 +2,7 @@
 
 ## Context and baseline
 
-This description expands [How POODO works](../how-it-works.md) at source baseline `01e6c60522702e6141a72bf081d5534eac92dcd5`. POODO is an instruction package executed by an agent host. Its entry point is [SKILL.md](../../SKILL.md), metadata version 3.1. The host supplies model execution, tools, permissions and any subagent or native-goal capabilities; the skill cannot create those capabilities or increase user authority.
+This description expands [How POODO works](../guides/explanation/how-it-works.md) at source baseline `01e6c60522702e6141a72bf081d5534eac92dcd5`. POODO is an instruction package executed by an agent host. Its entry point is [SKILL.md](../../SKILL.md), metadata version 3.1. The host supplies model execution, tools, permissions and any subagent or native-goal capabilities; the skill cannot create those capabilities or increase user authority.
 
 The [requirements](../requirements/requirements.md) identify behavioral obligations. The Python validators inspect package or capsule structure; they do not implement the reasoning loop or prove its outcomes.
 
@@ -55,4 +55,4 @@ These summarize the cited source rather than introduce new architecture decision
 
 ## Limits
 
-The full loop has research and exploration costs and is outside the stated scope for routine questions. Behavioral improvement remains unmeasured in the repository's published evaluation discussion. A package check, capsule check or synthetic example does not demonstrate sound reasoning or a successful intended-use outcome. See [Evaluation](../evaluation.md).
+The full loop has research and exploration costs and is outside the stated scope for routine questions. Behavioral improvement remains unmeasured in the repository's published evaluation discussion. A package check, capsule check or synthetic example does not demonstrate sound reasoning or a successful intended-use outcome. See [Evaluation](../guides/how-to/evaluation.md).

@@ -36,7 +36,7 @@ Expect a short framing exchange, evidence gathering, alternatives, and an explic
 
 ## Request Mega Observe
 
-See the [full protocol](../references/mega-observe.md) and [example](../examples/mega-observe.md). Request this mode by name and establish the problem, scope, resource ceiling, and quality contract before launching it. Installing POODO does not start research or authorize spending.
+See the [full protocol](../../../references/mega-observe.md) and [example](../../../examples/mega-observe.md). Request this mode by name and establish the problem, scope, resource ceiling, and quality contract before launching it. Installing POODO does not start research or authorize spending.
 
 ## Check the package
 

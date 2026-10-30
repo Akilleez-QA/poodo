@@ -25,17 +25,17 @@ python scripts/check_capsule.py path/to/capsule.yaml --hard-token-ceiling 2400
 
 ## Mega Observe probes
 
-[eight additional cases](../evals/mega-observe.yaml) test budget authority, padding pressure, unsupported completeness, evidence-family duplication, resume behavior, and the distinction between evaluated questions and supported findings. These are proposed probes, not recorded passing results or a full Mega run.
+[eight additional cases](../../../evals/mega-observe.yaml) test budget authority, padding pressure, unsupported completeness, evidence-family duplication, resume behavior, and the distinction between evaluated questions and supported findings. These are proposed probes, not recorded passing results or a full Mega run.
 
 The 3.1 addition leaves the continuation capsule schema at 3.0. Mega run records live in separate durable artifacts referenced from the capsule. The charter is a planning template, not an automatically enforced spending limit.
 
 ## Run a behavioral study
 
-Read the [protocol](../evals/protocol.md), [rubric](../evals/rubric.md), and [manifest](../evals/manifest.yaml). Before execution, freeze a baseline, candidate commit, model/configuration, permissions, case set, grading instructions, and acceptance thresholds.
+Read the [protocol](../../../evals/protocol.md), [rubric](../../../evals/rubric.md), and [manifest](../../../evals/manifest.yaml). Before execution, freeze a baseline, candidate commit, model/configuration, permissions, case set, grading instructions, and acceptance thresholds.
 
 Separate prompts from grader-only `required`, `forbidden`, and `catastrophic_if` fields. Supply only the case prompt and permitted evidence to the evaluated agent. Run at least three independent trials per case and variant, randomize order, and blind graders to the variant. Continuity cases require at least three lossy summarize/resume cycles. Preserve failures and grader disagreements.
 
-Use [the run-record template](../evals/run-record.template.yaml) to capture the experimental configuration. Raw runs belong under ignored `evals/runs/` until reviewed for intentional publication. Never commit credentials or private tool traces.
+Use [the run-record template](../../../evals/run-record.template.yaml) to capture the experimental configuration. Raw runs belong under ignored `evals/runs/` until reviewed for intentional publication. Never commit credentials or private tool traces.
 
 Known protocol questions to resolve prospectively:
 
@@ -43,6 +43,6 @@ Known protocol questions to resolve prospectively:
 - Not every rubric dimension is relevant to every scenario. A case may list `not_applicable` dimensions in the manifest; this must be frozen before any trial is scored, and those dimensions are excluded from that case's denominator. No other N/A is allowed, and none may be added after seeing outputs.
 - These public cases are development material. Add held-out cases before making generalization claims.
 
-Record per-case and aggregate scores, catastrophic failures, uncertainty, cost, and proportionality regressions. The [proposed thresholds](../references/evaluation.md) are not evidence that POODO has met them.
+Record per-case and aggregate scores, catastrophic failures, uncertainty, cost, and proportionality regressions. The [proposed thresholds](../../../references/evaluation.md) are not evidence that POODO has met them.
 
 Outcome verification and transcript assessment answer different questions; graders can also be wrong. This distinction informs the evaluation design, as discussed in [Anthropic's agent evaluation guide](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents). It does not validate this project.
