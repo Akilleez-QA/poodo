@@ -1,33 +1,39 @@
 # POODO
 
-```text
-         ...            .=+*#**=.
-      -*#**#%*:       =%%#+=--+#@%-   .::.
-    :%*:    .%@*+#%%*@@=    ..   +@%%@@@@@%+-.
-   -@- :%@@%*+=-+%@@@*   +@@@@@+  :@@@@@@@@@@@%+.
-   @+ -@+#@+:  :%@@@@:  #@+--+@@*  *@@#+@@@@@@@@%+----:.
-   @= :%+%.:+ *@@@@@@%#%#  =+ -@#  +@@@+ #@@@@@@@@@@@@@@*:
-   =@=.-@ =@@%@@@@*.%*+@: :@@#@%. .@@@@@  %@@@@@@@@@#-*@@@%*-
-    :**@%*@**-.@@*=:%% @%.  --:  -@@@@@#  -@@@@@@@@@@# :@@@@@%-
-       %#-.  :.:%@@@@# -#@*-::-+%@@@@@@: :#@@@@@@@@@@@: :@@@@@@.
-      #*:   :=:  #@@@@-  *@@@@@@@@@@@@@-  #@@@@@@@@@@% .*@@@@@@#.
-     :@*.:--:..::#@@@@@:: *@@@@@@@@@@@@@*  +@@@@@@@@@*  #@@@@@@@*
-     .#@@*. ..:.:@@@@@@@+ =@@@@@@@@@@@@@@:  #@@@@@@@@@.  *@@@@@@%
-      -@@@.   =-=@@@@@@@ .@@@@@@@@@@@@@@%  .#@@@@@@@@@%#- -@@@@@@#     :.
-       :%@#* .@@@@@@@@@::@@@@@@@@@@@@@@@. :@@@@@@@@@@@@@@. *@@@@@#    :%...
-        :#%@*=@@@@%@@@@.#@@%@@@@@@@@@@@+  #@@@@@@@@@@@@@@.-%@@@@@=    :* -#
-           #@@@@+:.@@@@%%@@-*@@@@@@@@@@@=.@@@@@@@@@@#@@@@:+@@@@@@*    .+. +
-            .-#*   +@@@@@@%. :+#-%@@@@@@@#%=#%#*@@@@%==%@@*@@@@@@.   -%@%*-
-                 .=@@%@@@@%     :*@@@@@@@@=   .+@%@@@#  -@@@@@@@%. :*%*#%@@*:
-                :*-#:.-@@@%    ==**::%@@@%   .++=:+@%* :++*:=@@@%  @%*#####@%
-                .:::::::::.    =:=:::-+==-       .     .::::.:::.  .:------:.
+Make your agent show its evidence before it acts: an explicit-invocation reasoning and orchestration skill for Codex and Agent Skills clients.
 
-                         ____   ___   ___  ____   ___
-                        |  _ \ / _ \ / _ \|  _ \ / _ \
-                        | |_) | | | | | | | | | | | | |
-                        |  __/| |_| | |_| | |_| | |_| |
-                        |_|    \___/ \___/|____/ \___/
+[![License](https://img.shields.io/badge/license-GPL--3.0--only-2400FF?style=flat-square&labelColor=000000)](LICENSE)
+
+## Status
+
+This initial public project contains the POODO 3.1 instructions, reference library, capsule checker, regression tests, 14 base behavioral evaluation cases, eight Mega Observe protocol probes, and synthetic examples. CI checks package structure and checker regressions.
+
+**Behavioral improvement is unmeasured.** There is no published baseline comparison or completed behavioral trial set. A passing checker does not demonstrate sound reasoning, truthful evidence, or a successful real-world outcome. See the [evaluation boundaries](docs/evaluation.md).
+
+## Quickstart
+
+Run the structural checks from the checkout root with Python 3.10 or newer and the dependencies in `requirements-dev.txt` available:
+
+```sh
+python3 scripts/validate_skill.py
+python3 scripts/check_capsule.py evals/fixtures/valid-capsule.yaml
 ```
+
+Both commands check structure. They do not run a behavioral evaluation. See [Getting started](docs/getting-started.md) for installation and first use.
+
+## What it does
+
+A reasoning and orchestration skill for consequential decisions, investigations, and ambiguous work. POODO asks an agent to separate what it knows from what it assumes, challenge its preferred explanation, and verify the outcome it was actually asked to achieve.
+
+POODO structures a decision around evidence, alternatives, authority, and an observable success criterion. It preserves uncertainty and unresolved contradictions across handoffs. Before acting, it records what should happen and how to tell whether it did.
+
+For example, a deployment can pass every schema check while the user-visible feature still fails. POODO requires the agent to retract the outcome claim, preserve the passing checks within their limited scope, and identify the next useful test.
+
+| Part | Purpose |
+| --- | --- |
+| Skill and references | Decision stages, evidence rules, and continuity |
+| Validators | Package and capsule structure checks |
+| Evaluations and examples | Behavioral probes and illustrative scenarios |
 
 **Pontificate → Observe → Orient → Decide → Orchestrate**
 
@@ -39,22 +45,7 @@ Frame the goal → Gather evidence → Explore alternatives → Commit → Act a
                        └────────── Learn from the outcome ───────┘
 ```
 
-## Start here
-
-- [Install and invoke POODO](docs/getting-started.md)
-- [Understand the loop](docs/how-it-works.md)
-- [Explore examples](examples/README.md)
-- [Use Mega Observe: 200 categories × 200 evaluations](references/mega-observe.md)
-- [Run checks and design evaluations](docs/evaluation.md)
-- [Read the full skill](SKILL.md)
-
-## What it does
-
-POODO structures a decision around evidence, alternatives, authority, and an observable success criterion. It preserves uncertainty and unresolved contradictions across handoffs. Before acting, it records what should happen and how to tell whether it did.
-
-For example, a deployment can pass every schema check while the user-visible feature still fails. POODO requires the agent to retract the outcome claim, preserve the passing checks within their limited scope, and identify the next useful test.
-
-## The loop in pseudocode
+### The loop in pseudocode
 
 A developer's sketch of the control flow. It is illustrative, not executable, and it does not replace [SKILL.md](SKILL.md), which remains the authoritative contract.
 
@@ -165,7 +156,7 @@ Throughout, claim states stay separate: a report is not an observation, a passin
 
 Further reading: [How POODO works](docs/how-it-works.md) explains the reasoning behind each step, [Getting started](docs/getting-started.md) covers installation, and the [examples](examples/README.md) walk through [an architecture decision](examples/architecture-decision.md), [a deployment contradiction](examples/deployment-contradiction.md), [a continuity handoff](examples/continuity-handoff.md), and [a Mega Observe run](examples/mega-observe.md). The behavioral tests are in [evals/](evals/) ([manifest](evals/manifest.yaml), [rubric](evals/rubric.md), [protocol](evals/protocol.md)), and their design is in [evaluation.md](references/evaluation.md) and [docs/evaluation.md](docs/evaluation.md).
 
-## Use it deliberately
+### Use it deliberately
 
 Invoke POODO explicitly for architectural choices, difficult investigations, disputed evidence, strategy, and work that must survive multiple sessions. Ordinary facts and routine execution are outside its intended scope.
 
@@ -177,7 +168,7 @@ would demonstrate it. You may inspect files and run local tests; do not deploy.
 
 The standard loop requires web research before orientation, exactly 20 distinct paths before convergence, and consideration of bounded subagent work at each transition. Those requirements have real latency and context costs. A host without web access cannot complete the research gate. Subagents and native goals depend on the host's available tools; the skill cannot grant permissions or create missing capabilities.
 
-## Mega Observe (expensive)
+### Mega Observe (expensive)
 
 An optional research mode for a large semantic map: **200 distinct categories × 200 distinct evaluations each = 40,000 substantive records**. Invoke it explicitly:
 
@@ -193,13 +184,51 @@ The mode can require substantial inference and review, potentially hundreds of d
 
 Literal coverage of the entire internet cannot be verified. The output must report the searched corpus, exclusions, uncertainty, and remaining frontier. The 200 × 200 design is experimental; neither spending nor record count proves completeness.
 
-## Project status
+### Project artwork
 
-This initial public project contains the POODO 3.1 instructions, reference library, capsule checker, regression tests, 14 base behavioral evaluation cases, eight Mega Observe protocol probes, and synthetic examples. CI checks package structure and checker regressions.
+```text
+         ...            .=+*#**=.
+      -*#**#%*:       =%%#+=--+#@%-   .::.
+    :%*:    .%@*+#%%*@@=    ..   +@%%@@@@@%+-.
+   -@- :%@@%*+=-+%@@@*   +@@@@@+  :@@@@@@@@@@@%+.
+   @+ -@+#@+:  :%@@@@:  #@+--+@@*  *@@#+@@@@@@@@%+----:.
+   @= :%+%.:+ *@@@@@@%#%#  =+ -@#  +@@@+ #@@@@@@@@@@@@@@*:
+   =@=.-@ =@@%@@@@*.%*+@: :@@#@%. .@@@@@  %@@@@@@@@@#-*@@@%*-
+    :**@%*@**-.@@*=:%% @%.  --:  -@@@@@#  -@@@@@@@@@@# :@@@@@%-
+       %#-.  :.:%@@@@# -#@*-::-+%@@@@@@: :#@@@@@@@@@@@: :@@@@@@.
+      #*:   :=:  #@@@@-  *@@@@@@@@@@@@@-  #@@@@@@@@@@% .*@@@@@@#.
+     :@*.:--:..::#@@@@@:: *@@@@@@@@@@@@@*  +@@@@@@@@@*  #@@@@@@@*
+     .#@@*. ..:.:@@@@@@@+ =@@@@@@@@@@@@@@:  #@@@@@@@@@.  *@@@@@@%
+      -@@@.   =-=@@@@@@@ .@@@@@@@@@@@@@@%  .#@@@@@@@@@%#- -@@@@@@#     :.
+       :%@#* .@@@@@@@@@::@@@@@@@@@@@@@@@. :@@@@@@@@@@@@@@. *@@@@@#    :%...
+        :#%@*=@@@@%@@@@.#@@%@@@@@@@@@@@+  #@@@@@@@@@@@@@@.-%@@@@@=    :* -#
+           #@@@@+:.@@@@%%@@-*@@@@@@@@@@@=.@@@@@@@@@@#@@@@:+@@@@@@*    .+. +
+            .-#*   +@@@@@@%. :+#-%@@@@@@@#%=#%#*@@@@%==%@@*@@@@@@.   -%@%*-
+                 .=@@%@@@@%     :*@@@@@@@@=   .+@%@@@#  -@@@@@@@%. :*%*#%@@*:
+                :*-#:.-@@@%    ==**::%@@@%   .++=:+@%* :++*:=@@@%  @%*#####@%
+                .:::::::::.    =:=:::-+==-       .     .::::.:::.  .:------:.
 
-**Behavioral improvement is unmeasured.** There is no published baseline comparison or completed behavioral trial set. A passing checker does not demonstrate sound reasoning, truthful evidence, or a successful real-world outcome. See the [evaluation boundaries](docs/evaluation.md).
+                         ____   ___   ___  ____   ___
+                        |  _ \ / _ \ / _ \|  _ \ / _ \
+                        | |_) | | | | | | | | | | | | |
+                        |  __/| |_| | |_| | |_| | |_| |
+                        |_|    \___/ \___/|____/ \___/
+```
 
-## Repository map
+## Documentation
+
+- [Install and invoke POODO](docs/getting-started.md)
+- [Understand the loop](docs/how-it-works.md)
+- [Explore examples](examples/README.md)
+- [Use Mega Observe: 200 categories × 200 evaluations](references/mega-observe.md)
+- [Run checks and design evaluations](docs/evaluation.md)
+- [Read the full skill](SKILL.md)
+
+## Related projects
+
+The skill follows the [Agent Skills directory format](https://agentskills.io/specification). Its host-specific guidance currently targets Codex; other clients require their own installation and capability checks.
+
+## Layout
 
 | Path | Purpose |
 | --- | --- |
@@ -211,9 +240,7 @@ This initial public project contains the POODO 3.1 instructions, reference libra
 | `examples/` | Illustrative scenarios, not measured runs |
 | `docs/` | Installation, concepts, evaluations, and roadmap |
 
-The skill follows the [Agent Skills directory format](https://agentskills.io/specification). Its host-specific guidance currently targets Codex; other clients require their own installation and capability checks.
-
-## Contribute
+## Contributing
 
 Start with [CONTRIBUTING.md](CONTRIBUTING.md). Useful contributions include reproducible failure cases, clearer examples, independently graded trials, and fixes to checker behavior. Changes to the reasoning method should explain the problem and include evidence for their intended effect.
 
