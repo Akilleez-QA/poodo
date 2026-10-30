@@ -1,3 +1,5 @@
+![POODO social preview](.github/assets/social-preview.png)
+
 # POODO
 
 Make your agent show its evidence before it acts: an explicit-invocation reasoning and orchestration skill for Codex and Agent Skills clients.
