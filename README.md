@@ -6,25 +6,9 @@ Make your agent show its evidence before it acts: an explicit-invocation reasoni
 
 [![License](https://img.shields.io/badge/license-GPL--3.0--only-2400FF?style=flat-square&labelColor=000000)](LICENSE)
 
-## Family
-
-| Repository | Role | Relation |
-|---|---|---|
-| [cstack](https://github.com/Akilleez-QA/cstack) | Runs Foundations behind pinned adapters under one human approver | Host |
-| [foundation-engine](https://github.com/Akilleez-QA/foundation-engine) | TypeScript and three.js framework for browser games | Foundation |
-| [foundation-math](https://github.com/Akilleez-QA/foundation-math) | Exact mathematical kernels and physics research tools | Foundation |
-| [foundation-film](https://github.com/Akilleez-QA/foundation-film) | Film-production acceptance checks | Foundation |
-| [foundation-refrigeration](https://github.com/Akilleez-QA/foundation-refrigeration) | Refrigeration data and checks | Foundation |
-| [foundation-robotics](https://github.com/Akilleez-QA/foundation-robotics) | Physics checks for motion | Foundation |
-| [foundation-template](https://github.com/Akilleez-QA/foundation-template) | Minimal Foundation to copy for a new domain | Foundation |
-| [endoforge](https://github.com/Akilleez-QA/endoforge) | Workshop for running coding agents with checks and receipts | Tool |
-| [poodo](https://github.com/Akilleez-QA/poodo) | Reasoning skill that shows evidence before it acts | Tool |
-
 ## Status
 
-This initial public project contains the POODO 3.1 instructions, reference library, capsule checker, regression tests, 14 base behavioral evaluation cases, eight Mega Observe protocol probes, and synthetic examples. CI checks package structure and checker regressions.
-
-**Behavioral improvement is unmeasured.** There is no published baseline comparison or completed behavioral trial set. A passing checker does not demonstrate sound reasoning, truthful evidence, or a successful real-world outcome. See the [evaluation boundaries](docs/guides/how-to/evaluation.md).
+This initial public project contains the POODO 3.1 instructions, reference library, capsule checker, regression tests, 14 base behavioral evaluation cases, eight Mega Observe protocol probes, and synthetic examples. CI checks package structure and checker regressions. **Behavioral improvement is unmeasured.** There is no published baseline comparison or completed behavioral trial set. A passing checker does not demonstrate sound reasoning, truthful evidence, or a successful real-world outcome. See the [evaluation boundaries](docs/guides/how-to/evaluation.md).
 
 ## Quickstart
 
@@ -53,13 +37,16 @@ For example, a deployment can pass every schema check while the user-visible fea
 
 **Pontificate → Observe → Orient → Decide → Orchestrate**
 
-A reasoning and orchestration skill for consequential decisions, investigations, and ambiguous work. POODO asks an agent to separate what it knows from what it assumes, challenge its preferred explanation, and verify the outcome it was actually asked to achieve.
-
 ```text
 Frame the goal → Gather evidence → Explore alternatives → Commit → Act and verify
                        ↑                                         │
                        └────────── Learn from the outcome ───────┘
 ```
+
+### Not included
+
+- Published baseline comparison or completed behavioral trial set.
+- Crawler, paid execution service, or billing cap implementation.
 
 ### The loop in pseudocode
 
@@ -241,6 +228,20 @@ Literal coverage of the entire internet cannot be verified. The output must repo
 - [Run checks and design evaluations](docs/guides/how-to/evaluation.md)
 - [Read the full skill](SKILL.md)
 
+
+## Related projects
+
+| Repository | Role | Relation |
+|---|---|---|
+| [cstack](https://github.com/Akilleez-QA/cstack) | Runs Foundations behind pinned adapters under one human approver | Host |
+| [foundation-engine](https://github.com/Akilleez-QA/foundation-engine) | TypeScript and three.js framework for browser games | Foundation |
+| [foundation-math](https://github.com/Akilleez-QA/foundation-math) | Exact mathematical kernels and physics research tools | Foundation |
+| [foundation-film](https://github.com/Akilleez-QA/foundation-film) | Film-production acceptance checks | Foundation |
+| [foundation-refrigeration](https://github.com/Akilleez-QA/foundation-refrigeration) | Refrigeration data and checks | Foundation |
+| [foundation-robotics](https://github.com/Akilleez-QA/foundation-robotics) | Physics checks for motion | Foundation |
+| [foundation-template](https://github.com/Akilleez-QA/foundation-template) | Minimal Foundation to copy for a new domain | Foundation |
+| [endoforge](https://github.com/Akilleez-QA/endoforge) | Workshop for running coding agents with checks and receipts | Tool |
+| [poodo](https://github.com/Akilleez-QA/poodo) | Reasoning skill that shows evidence before it acts | Tool |
 
 ## Layout
 
