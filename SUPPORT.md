@@ -1,8 +1,8 @@
 # Support
 
-For installation and first use, see [Getting started](docs/guides/tutorials/getting-started.md). For evaluation limits and local checks, see [Evaluation](docs/guides/how-to/evaluation.md).
+For installation and first use, see [Getting started](docs/guides/tutorials/getting-started.md). For evaluation limits and local checks, see [Evaluation](docs/guides/how-to/evaluation.md). For commands and exit codes, see the [command reference](docs/guides/reference/cli.md).
 
-Use [GitHub issues](https://github.com/Akilleez-QA/poodo/issues) for reproducible bugs and documentation questions. Include the commit or version, host, expected behavior, actual behavior, reproduction steps, and checks already run. Separate observations from suspected causes.
+Use [GitHub issues](https://github.com/Akilleez-QA/poodo/issues) for reproducible bugs, documentation defects and change requests. Pick the [problem report](.github/ISSUE_TEMPLATE/problem-report.md) or [change request](.github/ISSUE_TEMPLATE/change-request.md) template. Include the commit or version, host, expected behavior, actual behavior, reproduction steps, and checks already run. Separate observations from suspected causes.
 
 Keep examples synthetic or authorized for publication. Remove private paths, secrets, customer data, and unrelated conversation records. See [Contributing](CONTRIBUTING.md) before submitting changes.
 

@@ -7,10 +7,16 @@ Tooling and evaluation-rule fixes.
 ### Added
 
 - Add root coding-agent guidance and weekly Dependabot checks for GitHub Actions and Python dependencies, with up to three open PRs per ecosystem.
+- Engineering records organized after NASA documentation guidance (self-assessed Class E analog, not safety-critical; not a NASA compliance determination): software management plan, compliance matrix, data dictionary, test plan, assurance record, skill-host and capsule-checker interface documents, limitations page, command reference, user manual map, and a generated version description and test report.
+- Requirements REQ-PO-022 to REQ-PO-044 for the validators, each traced to a test or listed as an untested gap.
+- `tools/check_trace.py`, run in CI: fails on an untraced requirement, a missing or untraced test, an unregistered gap, or a dead link. `tools/gen_release_docs.py` generates the version description and test report.
+- Problem-report and change-request issue templates (the bug template became the problem report); the pull request template now records the peer review.
 
 ### Changed
 
 - Rubric: define N/A via a per-case `not_applicable` manifest field frozen before scoring.
+- CI: `actions/checkout` v4 → v7 and `actions/setup-python` v5 → v7 (Dependabot).
+- Requirements, design, verification matrix, configuration and Cstack interface documents re-baselined to commits in this history; the Cstack interface is re-pinned to current Cstack main.
 
 ### Fixed
 
