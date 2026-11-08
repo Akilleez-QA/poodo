@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import importlib.util
 import shutil
 import subprocess
 import sys
@@ -91,12 +92,21 @@ class TraceCheckTests(unittest.TestCase):
         (directory / "docs/verification/verification-matrix.md").write_text(VM, encoding="utf-8")
         (directory / "docs/architecture/architecture.md").write_text(SDD, encoding="utf-8")
         shutil.copy(ROOT / "scripts/check_capsule.py", directory / "scripts/check_capsule.py")
-        shutil.copy(ROOT / "docs/data/data-dictionary.md", directory / "docs/data/data-dictionary.md")
+        (directory / "docs/data/data-dictionary.md").write_text(self.dictionary(), encoding="utf-8")
         (directory / "evals/manifest.yaml").write_text("cases:\n  - id: case-a\n", encoding="utf-8")
         (directory / "evals/test_demo.py").write_text(TEST, encoding="utf-8")
         (directory / ".github/workflows/checks.yml").write_text("steps:\n      - run: python demo.py\n", encoding="utf-8")
         (directory / "README.md").write_text("[req](docs/requirements/requirements.md#req-po-001--example)\n", encoding="utf-8")
         return directory
+
+    def dictionary(self) -> str:
+        spec = importlib.util.spec_from_file_location("capsule_for_test", ROOT / "scripts/check_capsule.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        names = set(module.REQUIRED) | set(module.OPTIONAL)
+        for enum in ("CLAIM_STATES", "RECORD_STATES", "PREDICTION_STATES", "COMPLETENESS", "DELIVERY_STATES", "OUTCOME_STATES"):
+            names |= set(getattr(module, enum))
+        return "# Data\n\n" + "\n".join(f"- `{name}`" for name in sorted(names)) + "\n"
 
     def check(self, root: Path) -> subprocess.CompletedProcess[str]:
         return subprocess.run(

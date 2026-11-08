@@ -251,7 +251,8 @@ def check_design(root: Path, requirements: dict[str, dict[str, str]]) -> list[st
 def check_derivations(root: Path, requirements: dict[str, dict[str, str]]) -> list[str]:
     errors = []
     for req_id, record in requirements.items():
-        paths = re.findall(r"`([^`]+)`", record.get("Derivation", ""))
+        tokens = re.findall(r"`([^`]+)`", record.get("Derivation", ""))
+        paths = [token for token in tokens if "/" in token or re.search(r"\.[A-Za-z]+$", token)]
         if not paths:
             errors.append(f"SRS: {req_id} derivation must name at least one source path in backticks")
         for path in paths:
@@ -277,7 +278,7 @@ def check_data_dictionary(root: Path) -> list[str]:
 
 
 def slug(heading: str) -> str:
-    value = re.sub(r"[`*_]", "", heading.strip().lower())
+    value = re.sub(r"[`*]", "", heading.strip().lower())
     value = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", value)
     value = re.sub(r"[^\w\- ]", "", value)
     return value.replace(" ", "-")

@@ -134,7 +134,7 @@ def header(title: str, doc_id: str, commit: str, date: str) -> list[str]:
         "| Owner | Akilleez-QA |",
         f"| Date | {date} |",
         f"| Baseline commit | `{commit}` |",
-        f"| Applies to | poodo main at baseline commit (untagged) |",
+        "| Applies to | poodo main at baseline commit (untagged) |",
         "| Classification | Self-assessed Class E analog; not safety-critical (see SMP §1) |",
         "",
         DISCLAIMER,
