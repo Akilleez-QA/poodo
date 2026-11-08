@@ -8,7 +8,9 @@ Make your agent show its evidence before it acts: an explicit-invocation reasoni
 
 ## Status
 
-This initial public project contains the POODO 3.1 instructions, reference library, capsule checker, regression tests, 14 base behavioral evaluation cases, eight Mega Observe protocol probes, and synthetic examples. CI checks package structure and checker regressions. **Behavioral improvement is unmeasured.** There is no published baseline comparison or completed behavioral trial set. A passing checker does not demonstrate sound reasoning, truthful evidence, or a successful real-world outcome. See the [evaluation boundaries](docs/guides/how-to/evaluation.md).
+Method version 3.1 (`SKILL.md` metadata), continuation capsule schema POODO_CONTINUATION/3.0. No release has been tagged; install from a commit on `main`. The repository contains the instructions, reference library, package validator, capsule checker, 13 checker regression tests, 14 base behavioral evaluation cases, eight Mega Observe protocol probes, and synthetic examples. CI checks package structure, checker regressions and the documentation trace on Python 3.10 and 3.14. **Behavioral improvement is unmeasured.** There is no published baseline comparison or completed behavioral trial set. A passing checker does not demonstrate sound reasoning, truthful evidence, or a successful real-world outcome. See the [evaluation boundaries](docs/guides/how-to/evaluation.md).
+
+Classification: self-assessed Class E analog under NPR 7150.2D, not safety-critical. This is not a NASA compliance determination or certification; see the [software management plan](docs/plan/software-management-plan.md#1-software-classification-self-assessed).
 
 ## Quickstart
 
@@ -19,7 +21,7 @@ python3 scripts/validate_skill.py
 python3 scripts/check_capsule.py evals/fixtures/valid-capsule.yaml
 ```
 
-Both commands check structure. They do not run a behavioral evaluation. See [Getting started](docs/guides/tutorials/getting-started.md) for installation and first use.
+Both commands check structure. They do not run a behavioral evaluation. The full set of CI checks is in [CONTRIBUTING.md](CONTRIBUTING.md#local-checks). See [Getting started](docs/guides/tutorials/getting-started.md) for installation and first use.
 
 ## What it does
 
@@ -47,6 +49,13 @@ Frame the goal → Gather evidence → Explore alternatives → Commit → Act a
 
 - Published baseline comparison or completed behavioral trial set.
 - Crawler, paid execution service, or billing cap implementation.
+
+### Limitations
+
+- The skill grants no authority and cannot add host features. Without web research it stops before Orient.
+- The full loop is slow and costly; it is the wrong tool for routine questions.
+- The validators check structure only. `validate_skill.py` has no tests of its failure paths, and several capsule-checker rules are untested; the [verification matrix](docs/verification/verification-matrix.md#untested-requirement-gaps) lists every gap.
+- Do not use a POODO-guided agent's output as the sole basis for a safety, engineering or regulated decision. See [Limitations and safety-relevant use](docs/guides/explanation/limitations.md).
 
 ### The loop in pseudocode
 
@@ -226,6 +235,9 @@ Literal coverage of the entire internet cannot be verified. The output must repo
 - [Explore examples](examples/README.md)
 - [Use Mega Observe: 200 categories × 200 evaluations](references/mega-observe.md)
 - [Run checks and design evaluations](docs/guides/how-to/evaluation.md)
+- [Look up commands and exit codes](docs/guides/reference/cli.md)
+- [Know the limitations](docs/guides/explanation/limitations.md)
+- [Engineering records: requirements, design, interfaces, verification](docs/README.md#control-documents)
 - [Read the full skill](SKILL.md)
 
 
@@ -250,10 +262,12 @@ Literal coverage of the entire internet cannot be verified. The output must repo
 | `SKILL.md` | Agent entry point and invariants |
 | `references/` | Phase guidance, evidence rules, continuity, and evaluation design |
 | `agents/openai.yaml` | Codex metadata and explicit invocation policy |
+| `assets/` | Mega Observe charter template |
 | `scripts/` | Structural validators |
+| `tools/` | Documentation trace check and release-document generator |
 | `evals/` | Behavioral cases, rubric, protocol, and checker regression fixtures |
 | `examples/` | Illustrative scenarios, not measured runs |
-| `docs/` | Installation, concepts, evaluations, and roadmap |
+| `docs/` | Guides and engineering records; start at [docs/README.md](docs/README.md) |
 
 ## Contributing
 

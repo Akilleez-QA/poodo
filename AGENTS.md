@@ -14,6 +14,7 @@ method; structural checks do not establish behavioral improvement.
 | `agents/openai.yaml` | Codex metadata and explicit invocation policy |
 | `assets/` | Mega Observe charter template |
 | `scripts/` | Package and continuation capsule validators |
+| `tools/` | Documentation trace check and release-document generator |
 | `evals/` | Behavioral cases, rubric, protocol, run-record template, and checker tests and fixtures |
 | `examples/` | Synthetic illustrative scenarios |
 | `docs/` | Engineering records and guides; start at `docs/README.md` |
@@ -33,11 +34,15 @@ python -m pip install -r requirements-dev.txt
 python scripts/validate_skill.py
 python -m unittest discover -s evals -p 'test_*.py' -v
 python scripts/check_capsule.py evals/fixtures/valid-capsule.yaml
+python tools/check_trace.py
+python -m unittest discover -s tools -p 'test_*.py' -v
 ```
 
 Report the Python version, commands run, results, and untested outcomes. These
-checks validate package and capsule structure and checker regressions; they do
-not run a behavioral evaluation.
+checks validate package and capsule structure, checker regressions and the
+documentation trace; they do not run a behavioral evaluation. A behavior change
+updates `docs/requirements/requirements.md` and
+`docs/verification/verification-matrix.md` in the same PR.
 
 ## Change rules
 
@@ -51,8 +56,10 @@ not run a behavioral evaluation.
   fixtures, traces, paths, and conversation records before publication.
 - Follow the existing `docs/` layout: `requirements/` for requirements,
   `architecture/` for design and boundaries, `icd/` for interface contracts,
-  `verification/` for coverage and results, and `configuration/` for versions,
-  pins, and baselines. Put tutorials, how-to guides, references, and explanations
+  `verification/` for coverage and results, `configuration/` for versions,
+  pins, and baselines, `plan/` for the management plan, `data/` for the data
+  dictionary, `assurance/` for analysis records, and `releases/` for generated
+  version descriptions. Put tutorials, how-to guides, references, and explanations
   under the corresponding `docs/guides/` directory.
 - Preserve explicit invocation and the boundary between the standard method and
   optional modes unless the change explicitly proposes a method revision.
