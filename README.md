@@ -6,7 +6,7 @@ An agent skill for Codex and other Agent Skills clients that makes your coding a
 
 [![License](https://img.shields.io/badge/license-GPL--3.0--only-2400FF?style=flat-square&labelColor=000000)](LICENSE)
 
-A skill is a folder of instructions that a coding agent loads on request. Its entry point is a `SKILL.md` file, and agents that read such folders are called Agent Skills clients; Codex is one. You install POODO by cloning this repository into your agent's skill folder. Then you call it by name for a hard decision or investigation. The agent then separates what it saw from what it assumes, keeps a serious rival explanation alive, writes down what should happen before it acts, and refuses to call something a success until the outcome you actually wanted has been observed. It is deliberately thorough and slow, so it is for decisions where being wrong costs more than waiting.
+POODO is a folder of written instructions (a *skill*) that you clone into your coding agent's skills folder. Codex, OpenAI's coding agent, reads skills from `SKILL.md` files, and so do other agents that support the Agent Skills format. When you call it (in Codex, by typing `$poodo` in your request), the agent separates what it saw from what it assumes, keeps a serious rival explanation alive, writes down what should happen before it acts, and refuses to call something a success until the outcome you actually wanted has been observed. It is deliberately thorough and slow, so it is for decisions where being wrong costs more than waiting.
 
 ## What changes
 
@@ -104,7 +104,14 @@ Only Codex has tested steps here. For another client, such as Claude Code, look 
 
 ### First request
 
-The quickest try needs no project: paste the prompt from [What changes](#what-changes) with `Use $poodo to assess this:` in front, and compare the answer with the two above.
+The quickest try needs no project. Paste this into Codex, then compare the answer with the two in [What changes](#what-changes):
+
+```text
+Use $poodo to assess this: A release has matching source and deployed hashes,
+passes schema checks, and has a valid receipt. A permitted end-to-end user test
+reports that none of the promised behavior changed. Assess status and identify
+the next step. Do not modify anything.
+```
 
 For real work, give the agent a concrete problem, the outcome you want and what it may touch:
 
