@@ -58,23 +58,7 @@ flowchart TD
     C -- "yes, or a clear evidence gap" --> T
 ```
 
-The agent follows [SKILL.md](SKILL.md), which states 14 rules and the loop. It loads one of 15 reference files from [references/](references/) when a stage needs it.
-
-### Handoffs between sessions
-
-You do not need this part to try POODO. Long work outlives one session. If a session ends mid-investigation, the next one should pick up the same goal and open questions, not a rosier summary. At a handoff, pause or context compaction, the agent writes a *continuation capsule*: a YAML file with the goal, what the agent may do, its predictions and any open contradictions. The next session resumes from it without treating old claims as fresh facts. You do not write capsules yourself. If you keep one, `scripts/check_capsule.py` checks its structure.
-
-The checker catches history that has been quietly rewritten. Here it runs on a sample capsule from the test fixtures, where a prediction went from `failed` back to `pending`, and the prediction points to an acceptance criterion (`AC-demo-visible`) that the file never defines:
-
-```console
-$ python scripts/check_capsule.py evals/fixtures/invalid-resurrection.yaml
-INVALID POODO capsule structure:
-- predictions[0].status_history: terminal prediction was resurrected; create a new prediction ID
-- predictions[0].oracle: unresolved ID AC-demo-visible
-No judgment about epistemic truth was performed.
-```
-
-It exits 1. A failed prediction stays failed. A retest needs a new prediction ID. This output came from a run on 2026-11-08.
+The agent follows [SKILL.md](SKILL.md), which states 14 rules and the loop. It loads one of 15 reference files from [references/](references/) when a stage needs it. For work that spans sessions, the agent writes a handoff file that a small checker can verify; see [Handoffs between sessions](docs/guides/explanation/how-it-works.md#handoffs-between-sessions).
 
 ## Install and try
 
@@ -89,22 +73,24 @@ git clone https://github.com/Akilleez-QA/poodo.git "$HOME/.agents/skills/poodo"
 
 Restart Codex if the skill does not appear. Call it by putting `$poodo` in your message. Codex does not start POODO on its own, because [agents/openai.yaml](agents/openai.yaml) sets `allow_implicit_invocation: false`. `git clone` refuses to overwrite a non-empty folder, so an existing copy is safe.
 
-Checked on 2026-11-08 with Codex CLI 0.167.0: Codex finds the skill in this folder.
+Checked on 2026-11-08 with Codex CLI 0.167.0, without a model call: Codex finds the skill in this folder ([how](docs/guides/tutorials/getting-started.md#how-the-install-was-checked)).
 
-<details>
-<summary>How that was checked</summary>
+### Claude Code
 
-The two commands ran in a throwaway home folder, without calling a model. Codex's prompt only lists skills it may start on its own, and POODO opts out of that. So a second scratch copy switched `allow_implicit_invocation` on, and `codex debug prompt-input` then listed POODO from `~/.agents/skills/poodo`. That proves the folder is right. The `$poodo` call syntax comes from the [getting-started guide](docs/guides/tutorials/getting-started.md); no agent session was run.
+```sh
+mkdir -p "$HOME/.claude/skills"
+git clone https://github.com/Akilleez-QA/poodo.git "$HOME/.claude/skills/poodo"
+```
 
-</details>
+Call it with `/poodo` followed by your request, for example `/poodo assess this: ...`. Claude Code reads personal skills from `~/.claude/skills/<name>/SKILL.md` and runs one directly with `/<name>`, according to its [skills documentation](https://code.claude.com/docs/en/skills). Unlike Codex, Claude Code may also load POODO on its own when a request looks relevant, because this repository's `SKILL.md` does not set `disable-model-invocation: true`. To allow only `/poodo`, add that line to the front matter of your copy ([how this was checked](docs/guides/tutorials/getting-started.md#how-the-install-was-checked)).
 
 ### Other Agent Skills clients
 
-Only Codex has tested steps here. For another client, such as Claude Code, look up where that client reads skills from, clone the same repository into that folder, and call the skill the way that client calls skills. Other clients may use different folders and invocation syntax, and may ignore `agents/openai.yaml`. `SKILL.md` itself says to use POODO only when explicitly invoked. This repository documents and checks only the Codex path; see the [skill host interface](docs/icd/icd-skill-host.md).
+For another client, look up where that client reads skills from, clone the same repository into that folder, and call the skill the way that client calls skills. Other clients may use different folders and invocation syntax, and may ignore `agents/openai.yaml`. `SKILL.md` itself says to use POODO only when explicitly invoked. See the [skill host interface](docs/icd/icd-skill-host.md).
 
 ### First request
 
-The quickest try needs no project. Paste this into Codex, then compare the answer with the two in [What changes](#what-changes):
+The quickest try needs no project. Paste this into Codex (in Claude Code, start with `/poodo` instead of `Use $poodo to`), then compare the answer with the two in [What changes](#what-changes):
 
 ```text
 Use $poodo to assess this: A release has matching source and deployed hashes,
@@ -113,15 +99,7 @@ reports that none of the promised behavior changed. Assess status and identify
 the next step. Do not modify anything.
 ```
 
-For real work, give the agent a concrete problem, the outcome you want and what it may touch:
-
-```text
-Use $poodo to investigate why the deployed feature still fails even though
-our checks pass. First establish the intended outcome and what evidence
-would demonstrate it. You may inspect files and run local tests; do not deploy.
-```
-
-Expect a short exchange about your goal first, then evidence, options, and a decision or a clear statement of what evidence is missing. It runs every stage even on a small question, so expect it to take longer than a normal request. The [examples](examples/README.md) show what each step looks like.
+For real work, give the agent a concrete problem, the outcome you want and what it may touch; [Getting started](docs/guides/tutorials/getting-started.md#first-use) has a sample prompt. Expect a short exchange about your goal first, then evidence, options, and a decision or a clear statement of what evidence is missing. It runs every stage even on a small question, so expect it to take longer than a normal request. The [examples](examples/README.md) show what each step looks like.
 
 ## What's inside
 
@@ -130,30 +108,12 @@ Expect a short exchange about your goal first, then evidence, options, and a dec
 | [`SKILL.md`](SKILL.md) | The skill: 14 rules, the loop, when to load each reference |
 | [`references/`](references/) | One file per stage or topic: evidence rules, contradictions, handoffs, output formats |
 | [`agents/openai.yaml`](agents/openai.yaml) | Codex display name and the explicit-only setting |
-| [`scripts/`](scripts/) | `validate_skill.py` (package check) and `check_capsule.py` (capsule check) |
+| [`scripts/`](scripts/) | `validate_skill.py` and `check_capsule.py`: structure checks, no model needed ([how to run](docs/guides/how-to/evaluation.md#check-the-files)) |
 | [`evals/`](evals/) | 14 behavioral test cases, 8 Mega Observe probes, a scoring rubric, and 13 checker tests |
 | [`examples/`](examples/README.md) | Four hand-written scenarios, not measured runs |
 | [`assets/`](assets/) | Charter template for Mega Observe |
 | [`tools/`](tools/) | Documentation trace check and release-document generator |
 | [`docs/`](docs/README.md) | Guides and engineering records |
-
-## Check the files
-
-You do not need this to use POODO. The checks need Python 3.10 or newer and no model or API key. From the checkout:
-
-```sh
-python3 -m venv .venv && . .venv/bin/activate
-python -m pip install -r requirements-dev.txt
-python scripts/validate_skill.py
-python scripts/check_capsule.py evals/fixtures/valid-capsule.yaml
-```
-
-```console
-POODO structural checks passed; behavioral correctness remains untested.
-POODO capsule structure passed; epistemic and behavioral correctness remain untested.
-```
-
-These confirm the files are complete and well formed. They do not test whether the agent reasons better. The full CI list is in [CONTRIBUTING.md](CONTRIBUTING.md#local-checks).
 
 ## Status and limitations
 
@@ -169,28 +129,13 @@ These confirm the files are complete and well formed. They do not test whether t
 - [How POODO works](docs/guides/explanation/how-it-works.md): the stages, the loop in pseudocode, and where each step is specified
 - [Examples](examples/README.md): a deployment contradiction, an architecture decision, a handoff, a Mega Observe plan
 - [Evaluation](docs/guides/how-to/evaluation.md): run the checks and design a behavioral study
-- [Command reference](docs/guides/reference/cli.md): checker commands and exit codes
 - [Documentation index](docs/README.md)
 
 ## Related projects
 
 POODO is part of a small family of repositories maintained together. [Cstack](https://github.com/Akilleez-QA/cstack) keeps a pinned copy of POODO's method files ([interface](docs/icd/icd-cstack.md)); POODO does not depend on it or on any other family repository.
 
-<details>
-<summary>Family repositories</summary>
-
-| Repository | What it is |
-|---|---|
-| [cstack](https://github.com/Akilleez-QA/cstack) | Runs domain packages ("Foundations") behind pinned adapters under one human approver |
-| [endoforge](https://github.com/Akilleez-QA/endoforge) | Workshop for running coding agents with checks and receipts |
-| [foundation-engine](https://github.com/Akilleez-QA/foundation-engine) | TypeScript and three.js framework for browser games |
-| [foundation-math](https://github.com/Akilleez-QA/foundation-math) | Exact mathematical kernels and research tools |
-| [foundation-film](https://github.com/Akilleez-QA/foundation-film) | Film-production acceptance checks |
-| [foundation-refrigeration](https://github.com/Akilleez-QA/foundation-refrigeration) | Refrigeration data and checks |
-| [foundation-robotics](https://github.com/Akilleez-QA/foundation-robotics) | Physics checks for motion |
-| [foundation-template](https://github.com/Akilleez-QA/foundation-template) | Minimal Foundation to copy for a new domain |
-
-</details>
+Other family repositories: [endoforge](https://github.com/Akilleez-QA/endoforge) (runs coding agents with checks and receipts) and the Foundations [engine](https://github.com/Akilleez-QA/foundation-engine), [math](https://github.com/Akilleez-QA/foundation-math), [film](https://github.com/Akilleez-QA/foundation-film), [refrigeration](https://github.com/Akilleez-QA/foundation-refrigeration), [robotics](https://github.com/Akilleez-QA/foundation-robotics) and [template](https://github.com/Akilleez-QA/foundation-template).
 
 ## Contributing and security
 

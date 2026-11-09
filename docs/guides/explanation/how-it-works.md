@@ -32,6 +32,22 @@ A continuation capsule preserves objective, authority, evidence locators, artifa
 
 The checker validates a structural subset of one capsule. It cannot inspect the world behind evidence links or compare sibling capsule branches.
 
+## Handoffs between sessions
+
+Long work outlives one session. If a session ends mid-investigation, the next one should pick up the same goal and open questions, not a rosier summary. At a handoff, pause or context compaction, the agent writes a *continuation capsule*: a YAML file with the goal, what the agent may do, its predictions and any open contradictions. The next session resumes from it without treating old claims as fresh facts. You do not write capsules yourself. If you keep one, `scripts/check_capsule.py` checks its structure.
+
+The checker catches history that has been quietly rewritten. Here it runs on a sample capsule from the test fixtures, where a prediction went from `failed` back to `pending`, and the prediction points to an acceptance criterion (`AC-demo-visible`) that the file never defines:
+
+```console
+$ python scripts/check_capsule.py evals/fixtures/invalid-resurrection.yaml
+INVALID POODO capsule structure:
+- predictions[0].status_history: terminal prediction was resurrected; create a new prediction ID
+- predictions[0].oracle: unresolved ID AC-demo-visible
+No judgment about epistemic truth was performed.
+```
+
+It exits 1. A failed prediction stays failed. A retest needs a new prediction ID. This output came from a run on 2026-11-08.
+
 ## Cost and fit
 
 Mandatory research and divergent exploration make the full loop inappropriate for simple questions. Stop at a precise evidence boundary if required research is unavailable. For complex work, the working records can be detailed while the user-facing answer stays concise.
