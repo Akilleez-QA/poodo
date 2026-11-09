@@ -2,281 +2,149 @@
 
 # POODO
 
-Make your agent show its evidence before it acts: an explicit-invocation reasoning and orchestration skill for Codex and Agent Skills clients.
+An agent skill for Codex and other Agent Skills clients that makes your coding agent show its evidence before it acts.
 
 [![License](https://img.shields.io/badge/license-GPL--3.0--only-2400FF?style=flat-square&labelColor=000000)](LICENSE)
 
-## Status
+POODO is a folder of written instructions (a *skill*) that you clone into your coding agent's skills folder. Codex, OpenAI's coding agent, reads skills from `SKILL.md` files, and so do other agents that support the Agent Skills format. When you call it (in Codex, by typing `$poodo` in your request), the agent separates what it saw from what it assumes, keeps a serious rival explanation alive, writes down what should happen before it acts, and refuses to call something a success until the outcome you actually wanted has been observed. It is deliberately thorough and slow, so it is for decisions where being wrong costs more than waiting.
 
-Method version 3.1 (`SKILL.md` metadata), continuation capsule schema POODO_CONTINUATION/3.0. No release has been tagged; install from a commit on `main`. The repository contains the instructions, reference library, package validator, capsule checker, 13 checker regression tests, 14 base behavioral evaluation cases, eight Mega Observe protocol probes, and synthetic examples. CI checks package structure, checker regressions and the documentation trace on Python 3.10 and 3.14. **Behavioral improvement is unmeasured.** There is no published baseline comparison or completed behavioral trial set. A passing checker does not demonstrate sound reasoning, truthful evidence, or a successful real-world outcome. See the [evaluation boundaries](docs/guides/how-to/evaluation.md).
+## What changes
 
-Classification: self-assessed Class E analog under NPR 7150.2D, not safety-critical. This is not a NASA compliance determination or certification; see the [software management plan](docs/plan/software-management-plan.md#1-software-classification-self-assessed).
+Here is one case from the repository's evaluation set: a release passed every check, but a real user test shows nothing changed. The two answers below are illustrations written by hand to show the difference, not recorded model output.
 
-## Quickstart
+> A release has matching source and deployed hashes, passes schema checks, and has a valid receipt. A permitted end-to-end user test reports that none of the promised behavior changed. Assess status and identify the next step. Do not modify anything.
 
-Run the structural checks from the checkout root with Python 3.10 or newer and the dependencies in `requirements-dev.txt` available:
+**Without POODO**, a typical answer trusts the checks:
+
+> The release is verified. Source and deployed hashes match, schema checks pass and the receipt is valid, so the deployed code is the code we reviewed. Because the artifacts are identical, the end-to-end result most likely comes from the environment, such as a CDN or browser cache still serving the old build. The fix is in place. Next step: purge the cache and re-run the user test.
+
+**With POODO**, the answer leads with the correction:
+
+> **The improvement claim is withdrawn.** The user test was the success criterion, and it failed.
+>
+> - Still true: the hashes and schema checks pass. They show the right files were deployed in the right shape. They do not show the behavior changed.
+> - Cause: unknown. Two credible explanations remain. One is a defect in the change. The other is that requests reach a different runtime than the one that was checked.
+> - Next observation: compare the failing request's destination and runtime identity with the checked deployment, then repeat the user flow with the same inputs. This needs read-only access only.
+> - State: delivered to production; outcome failed according to the user test, not yet observed by the agent. The strongest claim the evidence supports is that the checks do not show the intended effect.
+
+Where the answers come from: the prompt is case `structural-pass-outcome-fail` in [evals/manifest.yaml](evals/manifest.yaml). Both answers were written by hand for this README. The unguided answer makes the case's two forbidden moves: it explains away the runtime result because hashes match, and it calls the outcome fixed. The guided answer meets the case's three required points and follows the contradiction format in [references/output-patterns.md](references/output-patterns.md) and the handoff in [examples/deployment-contradiction.md](examples/deployment-contradiction.md). No model was run for this README. The repository has no recorded trial runs yet, so this shows the target behavior, not a measured result. To compare on your own agent, send the same prompt with and without `$poodo` and score both answers with the [rubric](evals/rubric.md).
+
+## Why use it
+
+Coding agents often stop at the first thing that looks like proof. A green build, a matching hash or a confident summary from an earlier session gets reported as "fixed", and nobody checks the thing the user asked for. POODO is a written procedure that tells the agent to keep those apart. Use it when being wrong is expensive: architecture choices, hard bugs, disputed evidence, and work that has to survive several sessions or handoffs.
+
+Do not use it for quick questions or routine edits. Every call runs the whole loop, including web research and 20 distinct options before choosing. The agent scales the depth of evidence and testing to the stakes, but the loop is still slow and uses a lot of context; no timing has been measured. POODO itself is just files with no service behind it; a run costs whatever your agent's model and web search normally cost, only more of it. The answer you read stays short; the working notes can be long.
+
+## How it works
+
+POODO is named after its five stages: Pontificate (pin down the problem with you), Observe (collect evidence), Orient (lay out the options), Decide (choose) and Orchestrate (act and check). They run in order, and each has a gate the agent must pass before moving on. If the result contradicts the prediction, the agent goes back to Observe with the new evidence.
+
+```mermaid
+flowchart TD
+    P["<b>Pontificate</b><br/>Ask what you are working on and what a good outcome looks like.<br/>Separate what you said from what the agent inferred."]
+    O["<b>Observe</b><br/>Collect evidence with its source and limits,<br/>then do web research, including searches that could prove the idea wrong."]
+    S(["Stop and report what evidence is missing"])
+    R["<b>Orient</b><br/>Name 20 genuinely different options.<br/>Keep the strongest rival and a test that tells them apart."]
+    D["<b>Decide</b><br/>Choose or combine options within your authority.<br/>State what would reverse the decision."]
+    X["<b>Orchestrate</b><br/>Write the prediction and pass criterion first,<br/>then act and watch the result."]
+    C{"Did the outcome<br/>match the prediction?"}
+    F["Withdraw or narrow the claim,<br/>bring the rival back"]
+    T(["Final answer: what was delivered, what was observed,<br/>the strongest claim the evidence allows, who runs the next test"])
+
+    P --> O
+    O -- "host has no web search" --> S
+    O --> R --> D --> X --> C
+    C -- no --> F --> O
+    C -- "yes, or a clear evidence gap" --> T
+```
+
+The agent follows [SKILL.md](SKILL.md), which states 14 rules and the loop. It loads one of 15 reference files from [references/](references/) when a stage needs it. For work that spans sessions, the agent writes a handoff file that a small checker can verify; see [Handoffs between sessions](docs/guides/explanation/how-it-works.md#handoffs-between-sessions).
+
+## Install and try
+
+POODO needs the whole directory, not just `SKILL.md`, because `SKILL.md` links to files in `references/` and `assets/`. Full use also needs a host with web search. Without it, the agent still frames the problem and gathers evidence, then stops before listing options and tells you what is missing. In the Codex CLI, `codex --search` turns on live web search.
+
+### Codex
 
 ```sh
-python3 scripts/validate_skill.py
-python3 scripts/check_capsule.py evals/fixtures/valid-capsule.yaml
+mkdir -p "$HOME/.agents/skills"
+git clone https://github.com/Akilleez-QA/poodo.git "$HOME/.agents/skills/poodo"
 ```
 
-Both commands check structure. They do not run a behavioral evaluation. The full set of CI checks is in [CONTRIBUTING.md](CONTRIBUTING.md#local-checks). See [Getting started](docs/guides/tutorials/getting-started.md) for installation and first use.
+Restart Codex if the skill does not appear. Call it by putting `$poodo` in your message. Codex does not start POODO on its own, because [agents/openai.yaml](agents/openai.yaml) sets `allow_implicit_invocation: false`. `git clone` refuses to overwrite a non-empty folder, so an existing copy is safe.
 
-## What it does
+Checked on 2026-11-08 with Codex CLI 0.167.0, without a model call: Codex finds the skill in this folder ([how](docs/guides/tutorials/getting-started.md#how-the-install-was-checked)).
 
-A reasoning and orchestration skill for consequential decisions, investigations, and ambiguous work. POODO asks an agent to separate what it knows from what it assumes, challenge its preferred explanation, and verify the outcome it was actually asked to achieve.
+### Claude Code
 
-POODO structures a decision around evidence, alternatives, authority, and an observable success criterion. It preserves uncertainty and unresolved contradictions across handoffs. Before acting, it records what should happen and how to tell whether it did.
+```sh
+mkdir -p "$HOME/.claude/skills"
+git clone https://github.com/Akilleez-QA/poodo.git "$HOME/.claude/skills/poodo"
+```
 
-For example, a deployment can pass every schema check while the user-visible feature still fails. POODO requires the agent to retract the outcome claim, preserve the passing checks within their limited scope, and identify the next useful test.
+Call it with `/poodo` followed by your request, for example `/poodo assess this: ...`. Claude Code reads personal skills from `~/.claude/skills/<name>/SKILL.md` and runs one directly with `/<name>`, according to its [skills documentation](https://code.claude.com/docs/en/skills). Unlike Codex, Claude Code may also load POODO on its own when a request looks relevant, because this repository's `SKILL.md` does not set `disable-model-invocation: true`. To allow only `/poodo`, add that line to the front matter of your copy ([how this was checked](docs/guides/tutorials/getting-started.md#how-the-install-was-checked)).
 
-| Part | Purpose |
+### Other Agent Skills clients
+
+For another client, look up where that client reads skills from, clone the same repository into that folder, and call the skill the way that client calls skills. Other clients may use different folders and invocation syntax, and may ignore `agents/openai.yaml`. `SKILL.md` itself says to use POODO only when explicitly invoked. See the [skill host interface](docs/icd/icd-skill-host.md).
+
+### First request
+
+The quickest try needs no project. Paste this into Codex (in Claude Code, start with `/poodo` instead of `Use $poodo to`), then compare the answer with the two in [What changes](#what-changes):
+
+```text
+Use $poodo to assess this: A release has matching source and deployed hashes,
+passes schema checks, and has a valid receipt. A permitted end-to-end user test
+reports that none of the promised behavior changed. Assess status and identify
+the next step. Do not modify anything.
+```
+
+For real work, give the agent a concrete problem, the outcome you want and what it may touch; [Getting started](docs/guides/tutorials/getting-started.md#first-use) has a sample prompt. Expect a short exchange about your goal first, then evidence, options, and a decision or a clear statement of what evidence is missing. It runs every stage even on a small question, so expect it to take longer than a normal request. The [examples](examples/README.md) show what each step looks like.
+
+## What's inside
+
+| Path | What it is |
 | --- | --- |
-| Skill and references | Decision stages, evidence rules, and continuity |
-| Validators | Package and capsule structure checks |
-| Evaluations and examples | Behavioral probes and illustrative scenarios |
+| [`SKILL.md`](SKILL.md) | The skill: 14 rules, the loop, when to load each reference |
+| [`references/`](references/) | One file per stage or topic: evidence rules, contradictions, handoffs, output formats |
+| [`agents/openai.yaml`](agents/openai.yaml) | Codex display name and the explicit-only setting |
+| [`scripts/`](scripts/) | `validate_skill.py` and `check_capsule.py`: structure checks, no model needed ([how to run](docs/guides/how-to/evaluation.md#check-the-files)) |
+| [`evals/`](evals/) | 14 behavioral test cases, 8 Mega Observe probes, a scoring rubric, and 13 checker tests |
+| [`examples/`](examples/README.md) | Four hand-written scenarios, not measured runs |
+| [`assets/`](assets/) | Charter template for Mega Observe |
+| [`tools/`](tools/) | Documentation trace check and release-document generator |
+| [`docs/`](docs/README.md) | Guides and engineering records |
 
-**Pontificate → Observe → Orient → Decide → Orchestrate**
+## Status and limitations
 
-```text
-Frame the goal → Gather evidence → Explore alternatives → Commit → Act and verify
-                       ↑                                         │
-                       └────────── Learn from the outcome ───────┘
-```
+- Method version 3.1, capsule schema `POODO_CONTINUATION/3.0`. No release is tagged; install from `main` and note the commit.
+- **No measured effect yet.** The 14 behavioral cases and 8 probes are designs. None has been run and graded, and there is no baseline comparison.
+- The checkers test structure only. `validate_skill.py` has no tests of its failure paths, and several capsule-checker rules are untested. The [verification matrix](docs/verification/verification-matrix.md#untested-requirement-gaps) lists every gap.
+- The skill grants no permissions and adds no tools. It relies on the host for web search, subagents and permissions. Do not use its output as the only basis for a safety, engineering or regulated decision. See [Limitations](docs/guides/explanation/limitations.md).
+- An optional, much larger research mode, [Mega Observe](references/mega-observe.md), runs only when you ask for it by name. It can cost hundreds of dollars in model use. The agent must agree a scope and spending limit with you first; the repository ships no spending cap of its own.
 
-### Not included
+## Learn more
 
-- Published baseline comparison or completed behavioral trial set.
-- Crawler, paid execution service, or billing cap implementation.
-
-### Limitations
-
-- The skill grants no authority and cannot add host features. Without web research it stops before Orient.
-- The full loop is slow and costly; it is the wrong tool for routine questions.
-- The validators check structure only. `validate_skill.py` has no tests of its failure paths, and several capsule-checker rules are untested; the [verification matrix](docs/verification/verification-matrix.md#untested-requirement-gaps) lists every gap.
-- Do not use a POODO-guided agent's output as the sole basis for a safety, engineering or regulated decision. See [Limitations and safety-relevant use](docs/guides/explanation/limitations.md).
-
-### The loop in pseudocode
-
-A developer's sketch of the control flow. It is illustrative, not executable, and it does not replace [SKILL.md](SKILL.md), which remains the authoritative contract.
-
-```python
-def poodo(request, authority):
-    # Authority comes only from the user. Reasoning, delegation, compaction,
-    # confidence, and prior action never expand it.
-
-    # ── PONTIFICATE: frame the problem before gathering evidence ──   [references/pontificate.md]
-    if not context_clearly_establishes(work, ideal_outcome):
-        ask_user("What are you working on? What does the ideal outcome look like?")
-    frame = decompress(request)        # objective, acceptance criteria, scope, authority,
-                                       # stakes, assumptions, unknowns, rival framings
-    frame.separate(user_stated, agent_inferred)
-    frame.rival = strongest_rival_frame(frame)
-    checkpoint("Pontificate -> Observe")
-
-    while True:
-        # ── OBSERVE: establish what is actually known ──   [references/observe.md]
-        evidence = gather(frame)       # each record: source, locator, freshness, evidence
-                                       # family, scope, and what it does NOT establish
-        topology = map_neighborhood(frame, evidence)   # meanings, mechanisms, dependencies,
-                                                       # stakeholders, failure modes, unknowns
-        if user_selected("Mega Observe"):              # optional, expensive, explicit only
-            require(agreed_scope and resource_ceiling)
-            evidence += mega_observe(categories=200, evaluations_each=200)  # [references/mega-observe.md]
-        research = deep_web_research(topology, include_disconfirming_queries=True)
-        if not research.satisfied:     # no web access, snippets only, one convenient source...
-            return stop(reason="research gate unsatisfied", boundary=evidence.boundary)
-        checkpoint("Observe -> Orient")
-
-        # ── ORIENT: diverge before converging ──   [references/semantic-topology.md, references/orient.md]
-        traverse(topology, until=bounded_saturation)   # record unreached regions
-        paths = enumerate_paths(count=20, materially_distinct=True)  # incl. diagnostic,
-                                       # conservative, rollback, defer/stop, escalate
-        viable = cluster_and_eliminate(paths)          # every rejection keeps a reason
-        favored, rival = rank(viable), strongest_credible_rival(viable)
-        discriminator = observation_that_separates(favored, rival)
-        checkpoint("Orient -> Decide")
-
-        # ── DECIDE: the 20 paths are a design space, not a ballot ──   [references/decide.md]
-        decision = compose(viable)     # select, combine, sequence, condition, test,
-                                       # defer, or escalate any subset
-        decision.reverse_if = reversal_conditions(decision)
-        assert decision.within(authority)
-        assert decision.claim_strength <= evidence.ceiling
-        checkpoint("Decide -> Orchestrate")
-
-        # ── ORCHESTRATE: precommit, then act and verify ──   [references/orchestrate.md]
-        prediction = precommit(        # recorded BEFORE observing the outcome
-            observable, acceptance_boundary, oracle, oracle_version,
-            artifact_identity, environment, failure_meaning,
-            monitoring, rollback, stop_condition)
-        outcome = execute_authorized(decision, monitor=True)
-        checkpoint("Orchestrate -> Loop")
-
-        # ── LOOP: compare the outcome with the prediction ──   [references/contradiction-protocol.md]
-        if contradicts(outcome, prediction):
-            retract_or_narrow(success_claim)           # correct the claim first, explain later
-            prediction.status = "failed"               # or "failed_with_test_concern";
-                                                       # "invalid" only with outcome-independent proof
-            reopen(dependents_of(prediction))
-            restore(rival)
-            frame = frame.with_contradiction(outcome)  # new prediction ID on any retest
-            continue
-        if validated_in_named_scope(outcome) or justified_decision_and_next_action() \
-                or precise_evidence_or_authority_gap():
-            return terminal_claim(     # [references/output-patterns.md]
-                delivery_state,                # authored | checked | built | deployed
-                outcome_state,                 # unobserved | observed | passed | failed | ...
-                highest_justified_claim,
-                required_runtime_observation,
-                who_controls_next_test)
-        frame = frame.with_learning(outcome)   # promote learning only with provenance + scope
-
-
-def checkpoint(boundary):
-    # Run at every stage transition.   [references/fan-out-spikes.md, references/continuity-and-ledger.md]
-    if separable_workstreams_could_change(boundary):
-        results = fan_out(workers_with_distinct_questions_or_evidence)  # bounded, read-only by default
-        reconcile_into_ledger(results)         # agents sharing sources != independent corroboration
-    record(fanout_used, reason_if_not)
-    if handoff or pause or compaction_imminent:
-        emit_continuation_capsule()            # state metadata, never evidence
-```
-
-Throughout, claim states stay separate: a report is not an observation, a passing structural check is not a runtime outcome, and a plausible cause is not a demonstrated one.
-
-### Where each step is specified
-
-| Pseudocode | Document | What it breaks down |
-| --- | --- | --- |
-| `poodo()` as a whole | [SKILL.md](SKILL.md) | The 14 invariants, loop order, routing, terminal claim contract, scaling and stopping |
-| `ask_user`, `decompress` | [pontificate.md](references/pontificate.md) | Opening exchange, when it may be waived, linguistic decompression |
-| `gather`, `deep_web_research` | [observe.md](references/observe.md) | Evidence records and the mandatory web-research gate |
-| `mega_observe` | [mega-observe.md](references/mega-observe.md), [charter template](assets/mega-observe-charter.yaml) | 200 × 200 protocol, budget reservations, no-padding review, durable artifacts |
-| `map_neighborhood`, `traverse` | [semantic-topology.md](references/semantic-topology.md) | Topology map, traversal operations, bounded-saturation gate |
-| `enumerate_paths`, `cluster_and_eliminate` | [orient.md](references/orient.md) | The 20-path rule and what counts as materially distinct |
-| `compose`, `reverse_if` | [decide.md](references/decide.md) | Treating paths as a design space; reversal conditions |
-| `precommit`, `execute_authorized` | [orchestrate.md](references/orchestrate.md) | Workstream binding, monitoring, rollback, replanning |
-| `contradicts`, `retract_or_narrow` | [contradiction-protocol.md](references/contradiction-protocol.md) | `failed` / `failed_with_test_concern` / `invalid` / `inconclusive`, propagation, anti-rationalization |
-| `oracle`, `evidence.ceiling` | [epistemic-integrity.md](references/epistemic-integrity.md) | Verification vs. validation, oracle independence, discriminating tests, terminal labels |
-| `checkpoint`, `fan_out` | [fan-out-spikes.md](references/fan-out-spikes.md) | Transition checkpoints, worker assignments, barriers, council debate |
-| `emit_continuation_capsule` | [continuity-and-ledger.md](references/continuity-and-ledger.md), [`check_capsule.py`](scripts/check_capsule.py) | Capsule schema, lifecycle rules, re-entry and fork handling |
-| `terminal_claim` | [output-patterns.md](references/output-patterns.md) | Recommendation, contradiction, and handoff formats |
-| Native `/goal` binding (not shown) | [goal-integration.md](references/goal-integration.md) | Codex goal entry, stage sync, status semantics |
-| Choosing which operations to run | [method-selection.md](references/method-selection.md) | Matching an operation to the open question; Quick/Standard/Deep depth |
-
-Further reading: [How POODO works](docs/guides/explanation/how-it-works.md) explains the reasoning behind each step, [Getting started](docs/guides/tutorials/getting-started.md) covers installation, and the [examples](examples/README.md) walk through [an architecture decision](examples/architecture-decision.md), [a deployment contradiction](examples/deployment-contradiction.md), [a continuity handoff](examples/continuity-handoff.md), and [a Mega Observe run](examples/mega-observe.md). The behavioral tests are in [evals/](evals/) ([manifest](evals/manifest.yaml), [rubric](evals/rubric.md), [protocol](evals/protocol.md)), and their design is in [evaluation.md](references/evaluation.md) and [docs/guides/how-to/evaluation.md](docs/guides/how-to/evaluation.md).
-
-### Use it deliberately
-
-Invoke POODO explicitly for architectural choices, difficult investigations, disputed evidence, strategy, and work that must survive multiple sessions. Ordinary facts and routine execution are outside its intended scope.
-
-```text
-Use $poodo to investigate why the deployed feature still fails even though
-our checks pass. First establish the intended outcome and what evidence
-would demonstrate it. You may inspect files and run local tests; do not deploy.
-```
-
-The standard loop requires web research before orientation, exactly 20 distinct paths before convergence, and consideration of bounded subagent work at each transition. Those requirements have real latency and context costs. A host without web access cannot complete the research gate. Subagents and native goals depend on the host's available tools; the skill cannot grant permissions or create missing capabilities.
-
-### Mega Observe (expensive)
-
-An optional research mode for a large semantic map: **200 distinct categories × 200 distinct evaluations each = 40,000 substantive records**. Invoke it explicitly:
-
-```text
-Use $poodo in Mega Observe mode to map this problem space. First prepare
-its scope, source plan, quality criteria, and cost estimate. Do not begin
-the expensive run until a resource ceiling is established.
-```
-
-Each category and evaluation must earn its place through a distinct, relevant question and traceable evidence or a documented knowledge gap. Duplicate headings, generic text, unsupported certainty, and invented citations fail the quality gate. If 200 meaningful categories cannot be supported, the result is incomplete.
-
-The mode can require substantial inference and review, potentially hundreds of dollars depending on the host and models. It uses budget checkpoints and resumable records. This repository supplies the [protocol](references/mega-observe.md) and [charter](assets/mega-observe-charter.yaml); it does not include a crawler, paid execution service, or a billing cap implementation.
-
-Literal coverage of the entire internet cannot be verified. The output must report the searched corpus, exclusions, uncertainty, and remaining frontier. The 200 × 200 design is experimental; neither spending nor record count proves completeness.
-
-### Project artwork
-
-```text
-         ...            .=+*#**=.
-      -*#**#%*:       =%%#+=--+#@%-   .::.
-    :%*:    .%@*+#%%*@@=    ..   +@%%@@@@@%+-.
-   -@- :%@@%*+=-+%@@@*   +@@@@@+  :@@@@@@@@@@@%+.
-   @+ -@+#@+:  :%@@@@:  #@+--+@@*  *@@#+@@@@@@@@%+----:.
-   @= :%+%.:+ *@@@@@@%#%#  =+ -@#  +@@@+ #@@@@@@@@@@@@@@*:
-   =@=.-@ =@@%@@@@*.%*+@: :@@#@%. .@@@@@  %@@@@@@@@@#-*@@@%*-
-    :**@%*@**-.@@*=:%% @%.  --:  -@@@@@#  -@@@@@@@@@@# :@@@@@%-
-       %#-.  :.:%@@@@# -#@*-::-+%@@@@@@: :#@@@@@@@@@@@: :@@@@@@.
-      #*:   :=:  #@@@@-  *@@@@@@@@@@@@@-  #@@@@@@@@@@% .*@@@@@@#.
-     :@*.:--:..::#@@@@@:: *@@@@@@@@@@@@@*  +@@@@@@@@@*  #@@@@@@@*
-     .#@@*. ..:.:@@@@@@@+ =@@@@@@@@@@@@@@:  #@@@@@@@@@.  *@@@@@@%
-      -@@@.   =-=@@@@@@@ .@@@@@@@@@@@@@@%  .#@@@@@@@@@%#- -@@@@@@#     :.
-       :%@#* .@@@@@@@@@::@@@@@@@@@@@@@@@. :@@@@@@@@@@@@@@. *@@@@@#    :%...
-        :#%@*=@@@@%@@@@.#@@%@@@@@@@@@@@+  #@@@@@@@@@@@@@@.-%@@@@@=    :* -#
-           #@@@@+:.@@@@%%@@-*@@@@@@@@@@@=.@@@@@@@@@@#@@@@:+@@@@@@*    .+. +
-            .-#*   +@@@@@@%. :+#-%@@@@@@@#%=#%#*@@@@%==%@@*@@@@@@.   -%@%*-
-                 .=@@%@@@@%     :*@@@@@@@@=   .+@%@@@#  -@@@@@@@%. :*%*#%@@*:
-                :*-#:.-@@@%    ==**::%@@@%   .++=:+@%* :++*:=@@@%  @%*#####@%
-                .:::::::::.    =:=:::-+==-       .     .::::.:::.  .:------:.
-
-                         ____   ___   ___  ____   ___
-                        |  _ \ / _ \ / _ \|  _ \ / _ \
-                        | |_) | | | | | | | | | | | | |
-                        |  __/| |_| | |_| | |_| | |_| |
-                        |_|    \___/ \___/|____/ \___/
-```
-
-## Documentation
-
+- [Getting started](docs/guides/tutorials/getting-started.md): install, first use, updates and removal
+- [How POODO works](docs/guides/explanation/how-it-works.md): the stages, the loop in pseudocode, and where each step is specified
+- [Examples](examples/README.md): a deployment contradiction, an architecture decision, a handoff, a Mega Observe plan
+- [Evaluation](docs/guides/how-to/evaluation.md): run the checks and design a behavioral study
 - [Documentation index](docs/README.md)
-- [Install and invoke POODO](docs/guides/tutorials/getting-started.md)
-- [Understand the loop](docs/guides/explanation/how-it-works.md)
-- [Explore examples](examples/README.md)
-- [Use Mega Observe: 200 categories × 200 evaluations](references/mega-observe.md)
-- [Run checks and design evaluations](docs/guides/how-to/evaluation.md)
-- [Look up commands and exit codes](docs/guides/reference/cli.md)
-- [Know the limitations](docs/guides/explanation/limitations.md)
-- [Engineering records: requirements, design, interfaces, verification](docs/README.md#control-documents)
-- [Read the full skill](SKILL.md)
-
 
 ## Related projects
 
-| Repository | Role | Relation |
-|---|---|---|
-| [cstack](https://github.com/Akilleez-QA/cstack) | Runs Foundations behind pinned adapters under one human approver | Host |
-| [foundation-engine](https://github.com/Akilleez-QA/foundation-engine) | TypeScript and three.js framework for browser games | Foundation |
-| [foundation-math](https://github.com/Akilleez-QA/foundation-math) | Exact mathematical kernels and physics research tools | Foundation |
-| [foundation-film](https://github.com/Akilleez-QA/foundation-film) | Film-production acceptance checks | Foundation |
-| [foundation-refrigeration](https://github.com/Akilleez-QA/foundation-refrigeration) | Refrigeration data and checks | Foundation |
-| [foundation-robotics](https://github.com/Akilleez-QA/foundation-robotics) | Physics checks for motion | Foundation |
-| [foundation-template](https://github.com/Akilleez-QA/foundation-template) | Minimal Foundation to copy for a new domain | Foundation |
-| [endoforge](https://github.com/Akilleez-QA/endoforge) | Workshop for running coding agents with checks and receipts | Tool |
-| [poodo](https://github.com/Akilleez-QA/poodo) | Reasoning skill that shows evidence before it acts | Tool |
+POODO is part of a small family of repositories maintained together. [Cstack](https://github.com/Akilleez-QA/cstack) keeps a pinned copy of POODO's method files ([interface](docs/icd/icd-cstack.md)); POODO does not depend on it or on any other family repository.
 
-## Layout
+Other family repositories: [endoforge](https://github.com/Akilleez-QA/endoforge) (runs coding agents with checks and receipts) and the Foundations [engine](https://github.com/Akilleez-QA/foundation-engine), [math](https://github.com/Akilleez-QA/foundation-math), [film](https://github.com/Akilleez-QA/foundation-film), [refrigeration](https://github.com/Akilleez-QA/foundation-refrigeration), [robotics](https://github.com/Akilleez-QA/foundation-robotics) and [template](https://github.com/Akilleez-QA/foundation-template).
 
-| Path | Purpose |
-| --- | --- |
-| `SKILL.md` | Agent entry point and invariants |
-| `references/` | Phase guidance, evidence rules, continuity, and evaluation design |
-| `agents/openai.yaml` | Codex metadata and explicit invocation policy |
-| `assets/` | Mega Observe charter template |
-| `scripts/` | Structural validators |
-| `tools/` | Documentation trace check and release-document generator |
-| `evals/` | Behavioral cases, rubric, protocol, and checker regression fixtures |
-| `examples/` | Illustrative scenarios, not measured runs |
-| `docs/` | Guides and engineering records; start at [docs/README.md](docs/README.md) |
+## Contributing and security
 
-## Contributing
+Start with [CONTRIBUTING.md](CONTRIBUTING.md). Recorded failure cases, independently graded trials, clearer examples and checker fixes are the most useful contributions. A change to the method should explain the problem and bring evidence for its effect. Report vulnerabilities through [SECURITY.md](SECURITY.md); for other questions see [SUPPORT.md](SUPPORT.md). Participation follows the [Code of conduct](CODE_OF_CONDUCT.md).
 
-Start with [CONTRIBUTING.md](CONTRIBUTING.md). Useful contributions include reproducible failure cases, clearer examples, independently graded trials, and fixes to checker behavior. Changes to the reasoning method should explain the problem and include evidence for their intended effect.
+## Engineering records
 
-## Security
-
-Report vulnerabilities using [SECURITY.md](SECURITY.md). For other questions, see [SUPPORT.md](SUPPORT.md). Participation follows the [Code of conduct](CODE_OF_CONDUCT.md).
+POODO keeps a requirements, design, interface and verification record set, organized after NASA software documentation guidance. Classification: self-assessed Class E analog under NPR 7150.2D, not safety-critical. This is not a NASA compliance determination or certification; see the [software management plan](docs/plan/software-management-plan.md#1-software-classification-self-assessed). The full list of control documents is in the [documentation index](docs/README.md#engineering-records).
 
 ## License
 
-This project is available under the GNU General Public License v3.0 only (GPL-3.0-only). If you want to use it to create a product or service under different terms, commercial licenses are available from Refrigeration.AI. Contact craig@nh3.biz.
+GNU General Public License v3.0 only (GPL-3.0-only). If you want to use POODO in a product or service under different terms, commercial licenses are available from Refrigeration.AI. Contact craig@nh3.biz.

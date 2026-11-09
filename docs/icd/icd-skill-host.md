@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document ID | POODO-ICD-HOST |
-| Version | 1.0 |
+| Version | 1.1 |
 | Status | Baselined |
 | Owner | Akilleez-QA |
 | Date | 2026-11-08 |
@@ -18,12 +18,12 @@
 | Side | Entity | Owns |
 |---|---|---|
 | POODO | This repository | `SKILL.md` front matter and body, `references/`, `assets/`, `agents/openai.yaml`, the directory layout and relative links |
-| Host | An Agent Skills client, such as Codex | Skill discovery, invocation syntax, model, tools, permissions, web search, subagents, native goals, context compaction |
+| Host | An Agent Skills client, such as Codex or Claude Code | Skill discovery, invocation syntax, model, tools, permissions, web search, subagents, native goals, context compaction |
 | User | The person invoking the skill | Authority, the problem statement and the acceptance of outcomes |
 
 ## 2. Interface type and transport
 
-Files on disk. The host reads a skill directory. POODO expects the whole repository tree to be present, so that relative links from `SKILL.md` to `references/*.md` and `assets/` resolve. [Getting started](../guides/tutorials/getting-started.md) installs it by cloning into the host's skill directory (for Codex, `~/.agents/skills/poodo`). Encoding: UTF-8 Markdown and YAML. No network protocol, no process and no version negotiation exist.
+Files on disk. The host reads a skill directory. POODO expects the whole repository tree to be present, so that relative links from `SKILL.md` to `references/*.md` and `assets/` resolve. [Getting started](../guides/tutorials/getting-started.md) installs it by cloning into the host's skill directory (for Codex, `~/.agents/skills/poodo`; for Claude Code, `~/.claude/skills/poodo`). Encoding: UTF-8 Markdown and YAML. No network protocol, no process and no version negotiation exist.
 
 ## 3. Data elements
 
@@ -38,7 +38,7 @@ Files on disk. The host reads a skill directory. POODO expects the whole reposit
 | `agents/openai.yaml` | `interface.default_prompt` | string | contains `$poodo` | yes (validator) | Suggested prompt |
 | `agents/openai.yaml` | `policy.allow_implicit_invocation` | boolean | `false` | yes (validator) | Host must not auto-activate the skill |
 
-Invocation: Codex uses `$poodo`. Other hosts may use different syntax and may ignore `agents/openai.yaml`; the description still says to use the skill only when explicitly invoked.
+Invocation: Codex uses `$poodo`. Claude Code uses `/poodo` and ignores `agents/openai.yaml`; because `SKILL.md` does not set Claude Code's `disable-model-invocation: true`, Claude Code may load the skill on its own unless the user adds that field to their copy. Other hosts may use different syntax and may ignore `agents/openai.yaml`; the description still says to use the skill only when explicitly invoked.
 
 ## 4. Errors and result semantics
 
@@ -78,3 +78,4 @@ A change to the front matter, host metadata or file layout needs the package val
 | Version | Date | Commit | Change | Reviewed in |
 |---|---|---|---|---|
 | 1.0 | 2026-11-08 | `b969150` | Initial baseline | this PR |
+| 1.1 | 2026-11-08 | docs/reader-first | Claude Code install path and `/poodo` invocation added to §2 and §3 | docs/reader-first PR |
