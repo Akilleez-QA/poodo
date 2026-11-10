@@ -92,7 +92,7 @@ def parse_suite(returncode: int, output: str) -> dict:
         "statuses": len(statuses),
         "outcomes": outcomes,
         "summary": last[-1] if last else "",
-        "digest": hashlib.sha256(output.encode("utf-8")).hexdigest(),
+        "digest": hashlib.sha256(output.encode()).hexdigest(),
     }
 
 
