@@ -48,7 +48,7 @@ REQUIRED = {
     "next_step",
 }
 OPTIONAL = {"capsule_overflow"}
-COLLECTIONS = {
+COLLECTIONS = (
     "acceptance",
     "claims",
     "evidence_bundles",
@@ -59,7 +59,7 @@ COLLECTIONS = {
     "outcomes",
     "contradictions",
     "artifacts",
-}
+)
 CLAIM_STATES = {"reported", "reported_prior_state", "observed", "corroborated", "inferred"}
 RECORD_STATES = {"active", "stale", "superseded", "invalidated"}
 PREDICTION_STATES = {"pending", "passed", "failed", "invalid", "inconclusive", "failed_with_test_concern"}
@@ -134,6 +134,14 @@ def _reference(record: dict[str, Any], key: str, path: str, errors: list[str]) -
     return value
 
 
+def _blank(value: Any) -> bool:
+    if value is None:
+        return True
+    if isinstance(value, (list, dict)):
+        return not value
+    return not str(value).strip()
+
+
 def _timestamp(value: Any) -> bool:
     if isinstance(value, datetime):
         return value.tzinfo is not None and value.utcoffset() is not None
@@ -141,8 +149,6 @@ def _timestamp(value: Any) -> bool:
         return False
     if int(value[11:13]) > 23 or int(value[14:16]) > 59 or int(value[17:19]) > 59:
         return False
-    # datetime rejects impossible calendar values; explicitly reject offset
-    # minutes that fromisoformat otherwise normalizes (for example +01:99).
     if value[-1] != "Z" and (int(value[-5:-3]) > 23 or int(value[-2:]) > 59):
         return False
     try:
@@ -181,12 +187,12 @@ def validate(data: Any, raw_text: str, hard_token_ceiling: int = 1800) -> list[s
             errors.append("parent_capsule: revision 1 must not declare a parent")
         if revision > 1 and parent is None:
             errors.append("parent_capsule: revisions after 1 require a parent")
-    if not str(data.get("objective", "")).strip():
+    if _blank(data.get("objective")):
         errors.append("objective: must not be empty")
     generated_at = data.get("generated_at")
     if not _timestamp(generated_at):
         errors.append("generated_at: must be an RFC3339-compatible timestamp")
-    if not str(data.get("next_step", "")).strip():
+    if _blank(data.get("next_step")):
         errors.append("next_step: must not be empty")
     if not isinstance(data.get("authority"), dict):
         errors.append("authority: must be a mapping")
@@ -196,7 +202,7 @@ def validate(data: Any, raw_text: str, hard_token_ceiling: int = 1800) -> list[s
     if not isinstance(data.get("rehydration"), dict):
         errors.append("rehydration: must be a mapping")
     for key in ("delivery_state", "outcome_state", "highest_justified_claim", "required_runtime_observation", "who_controls_next_test"):
-        if not str(data.get(key, "")).strip():
+        if _blank(data.get(key)):
             errors.append(f"{key}: must not be empty")
     if not _enum(data.get("delivery_state"), DELIVERY_STATES):
         errors.append("delivery_state: invalid state")
@@ -217,7 +223,7 @@ def validate(data: Any, raw_text: str, hard_token_ceiling: int = 1800) -> list[s
                 records[record_id] = (field, record)
 
     for index, claim in enumerate(grouped["claims"]):
-        if not str(claim.get("text", claim.get("claim", ""))).strip():
+        if _blank(claim["text"] if "text" in claim else claim.get("claim")):
             errors.append(f"claims[{index}]: non-empty text or claim required")
         if not _enum(claim.get("state"), CLAIM_STATES):
             errors.append(f"claims[{index}].state: invalid claim state")
