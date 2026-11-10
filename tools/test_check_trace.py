@@ -244,6 +244,7 @@ class TraceCheckTests(unittest.TestCase):
             ("from unittest import case as c", "c.TestCase"),
             ("from unittest import TestCase as T", "T"),
             ("import unittest as ut", "ut.TestCase"),
+            ("from unittest import FunctionTestCase, TestCase", "TestCase"),
             ("from unittest import *", "TestCase"),
             ("from unittest.case import *", "TestCase"),
             ("from unittest.async_case import *", "TestCase"),
@@ -265,6 +266,22 @@ class TraceCheckTests(unittest.TestCase):
                 self.assertIn("; 2 tests (1 traced, 1 supporting)", result.stdout)
         with self.subTest("TestCase base imported from a helper module"):
             self.case_base_imported_from_helper_module_counts()
+        with self.subTest("tests defined outside the repository"):
+            self.case_tests_defined_outside_repository_are_not_counted()
+
+    def case_tests_defined_outside_repository_are_not_counted(self) -> None:
+        with tempfile.TemporaryDirectory() as directory, tempfile.TemporaryDirectory() as outside:
+            root = self.make_repo(Path(directory))
+            (Path(outside) / "outside_helpers.py").write_text(
+                "import unittest\n\n\nclass SharedTests(unittest.TestCase):\n    def test_shared(self):\n        pass\n",
+                encoding="utf-8",
+            )
+            self.edit(root / "evals/test_demo.py", "import unittest\n",
+                      f"import sys\nimport unittest\nsys.path.insert(0, {outside!r})\nfrom outside_helpers import SharedTests\n")
+            result = self.check(root)
+            self.assertEqual(result.returncode, 0, result.stdout)
+            self.assertNotIn("SharedTests", result.stdout)
+            self.assertIn("; 2 tests (1 traced, 1 supporting)", result.stdout)
 
     def case_base_imported_from_helper_module_counts(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

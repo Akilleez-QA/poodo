@@ -158,14 +158,14 @@ def discover_commands(commands: set[str]) -> list[tuple[str, str, str]]:
     return result
 
 
-def relative_path(root: Path, path: str) -> str:
+def relative_path(root: Path, path: str) -> str | None:
     location = Path(path)
     if not location.is_absolute():
-        return location.as_posix()
+        return None
     try:
         return location.resolve().relative_to(root.resolve()).as_posix()
     except ValueError:
-        return location.as_posix()
+        return None
 
 
 def collect_tests(root: Path, commands: set[str]) -> tuple[dict[str, set[str]], dict[str, set[str]], list[str]]:
@@ -195,7 +195,9 @@ def collect_tests(root: Path, commands: set[str]) -> tuple[dict[str, set[str]], 
             detail = f": {lines[-1]}" if lines else ""
             errors.append(f"DISCOVER: {where} could not import module {module}{detail}")
         for path, name, is_skipped in data["tests"]:
-            (skipped if is_skipped else methods).setdefault(relative_path(root, path), set()).add(name)
+            relative = relative_path(root, path)
+            if relative is not None:
+                (skipped if is_skipped else methods).setdefault(relative, set()).add(name)
     return methods, skipped, errors
 
 
