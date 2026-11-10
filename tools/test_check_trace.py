@@ -86,6 +86,56 @@ class DemoTests(Mixin, Base):
         pass
 """
 
+WORKFLOW = """steps:
+      - run: python demo.py
+      - run: python -m unittest discover -s evals -p 'test_*.py' -v
+"""
+
+HELPER = """import unittest
+
+
+class Base(unittest.TestCase):
+    pass
+"""
+
+HELPER_TEST = """from helper import Base
+
+
+class DemoTests(Base):
+    def test_one(self):
+        pass
+
+    def test_two(self):
+        pass
+"""
+
+DISABLED_TEST = """import unittest
+
+
+class Mixin:
+    def test_one(self):
+        pass
+
+    def test_two(self):
+        pass
+
+
+class DemoTests(Mixin, unittest.TestCase):
+    test_two = None
+"""
+
+SKIPPED_TEST = """import unittest
+
+
+class DemoTests(unittest.TestCase):
+    def test_one(self):
+        pass
+
+    @unittest.skip("disabled")
+    def test_two(self):
+        pass
+"""
+
 TEST = """import unittest
 
 
@@ -135,7 +185,7 @@ class TraceCheckTests(unittest.TestCase):
         (directory / "docs/data/data-dictionary.md").write_text(self.dictionary(), encoding="utf-8")
         (directory / "evals/manifest.yaml").write_text("cases:\n  - id: case-a\n", encoding="utf-8")
         (directory / "evals/test_demo.py").write_text(TEST, encoding="utf-8")
-        (directory / ".github/workflows/checks.yml").write_text("steps:\n      - run: python demo.py\n", encoding="utf-8")
+        (directory / ".github/workflows/checks.yml").write_text(WORKFLOW, encoding="utf-8")
         (directory / "README.md").write_text("[req](docs/requirements/requirements.md#req-po-001--example)\n", encoding="utf-8")
         return directory
 
@@ -213,6 +263,60 @@ class TraceCheckTests(unittest.TestCase):
                 result = self.check(root)
                 self.assertEqual(result.returncode, 0, result.stdout)
                 self.assertIn("; 2 tests (1 traced, 1 supporting)", result.stdout)
+        with self.subTest("TestCase base imported from a helper module"):
+            self.case_base_imported_from_helper_module_counts()
+
+    def case_base_imported_from_helper_module_counts(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = self.make_repo(Path(directory))
+            (root / "evals/helper.py").write_text(HELPER, encoding="utf-8")
+            (root / "evals/test_demo.py").write_text(HELPER_TEST, encoding="utf-8")
+            self.assertEqual(self.discovered(root), 2)
+            result = self.check(root)
+            self.assertEqual(result.returncode, 0, result.stdout)
+            self.assertIn("; 2 tests (1 traced, 1 supporting)", result.stdout)
+
+    def case_inherited_test_disabled_in_subclass_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = self.make_repo(Path(directory))
+            (root / "evals/test_demo.py").write_text(DISABLED_TEST, encoding="utf-8")
+            self.assertEqual(self.discovered(root), 1)
+            result = self.check(root)
+            self.assertEqual(result.returncode, 1, result.stdout)
+            self.assertIn("supporting-test row names test evals/test_demo.py::DemoTests.test_two that unittest does not run", result.stdout)
+            self.assertIn("; 1 tests (1 traced, 1 supporting)", result.stdout)
+
+    def case_skipped_test_is_not_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = self.make_repo(Path(directory))
+            (root / "evals/test_demo.py").write_text(SKIPPED_TEST, encoding="utf-8")
+            result = self.check(root)
+            self.assertEqual(result.returncode, 1, result.stdout)
+            self.assertIn("supporting-test row names test evals/test_demo.py::DemoTests.test_two that unittest skips", result.stdout)
+            self.assertIn("; 1 tests (1 traced, 1 supporting)", result.stdout)
+
+    def case_import_error_during_discovery_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = self.make_repo(Path(directory))
+            (root / "evals/test_broken.py").write_text("import missing_module_for_trace_test\n", encoding="utf-8")
+            result = self.check(root)
+            self.assertEqual(result.returncode, 1, result.stdout)
+            self.assertIn("DISCOVER: unittest discover -s evals -p test_*.py could not import module test_broken", result.stdout)
+            self.assertIn("missing_module_for_trace_test", result.stdout)
+
+    def case_tests_follow_ci_discover_commands(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = self.make_repo(Path(directory))
+            self.edit(root / ".github/workflows/checks.yml", "-p 'test_*.py'", "-p 'check_*.py'")
+            result = self.check(root)
+            self.assertEqual(result.returncode, 1, result.stdout)
+            self.assertIn("REQ-PO-001 references test evals/test_demo.py::DemoTests.test_one that unittest does not run", result.stdout)
+        with self.subTest("no discover command"), tempfile.TemporaryDirectory() as directory:
+            root = self.make_repo(Path(directory))
+            self.edit(root / ".github/workflows/checks.yml", "      - run: python -m unittest discover -s evals -p 'test_*.py' -v\n", "")
+            result = self.check(root)
+            self.assertEqual(result.returncode, 1, result.stdout)
+            self.assertIn("DISCOVER: CI runs no 'python -m unittest discover' command", result.stdout)
 
     def test_requirement_without_row_fails(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -250,6 +354,14 @@ class TraceCheckTests(unittest.TestCase):
                 self.assertIn("REQ-PO-001 references test evals/test_demo.py::DemoTests.test_one that unittest does not run", result.stdout)
                 self.assertIn("supporting-test row names test evals/test_demo.py::DemoTests.test_two that unittest does not run", result.stdout)
                 self.assertIn("; 0 tests (0 traced,", result.stdout)
+        with self.subTest("inherited test disabled in the subclass"):
+            self.case_inherited_test_disabled_in_subclass_fails()
+        with self.subTest("skipped test"):
+            self.case_skipped_test_is_not_evidence()
+        with self.subTest("import error during discovery"):
+            self.case_import_error_during_discovery_fails()
+        with self.subTest("CI discover commands"):
+            self.case_tests_follow_ci_discover_commands()
 
     def test_gap_without_registration_fails(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

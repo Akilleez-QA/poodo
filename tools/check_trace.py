@@ -7,8 +7,12 @@ import argparse
 import ast
 import importlib.util
 import json
+import os
 import re
+import shlex
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 DEFAULT_ROOT = Path(__file__).resolve().parents[1]
@@ -18,7 +22,6 @@ SDD = Path("docs/architecture/architecture.md")
 DD = Path("docs/data/data-dictionary.md")
 WORKFLOW = Path(".github/workflows/checks.yml")
 CAPSULE_CHECKER = Path("scripts/check_capsule.py")
-TEST_GLOBS = ("evals/test_*.py", "tools/test_*.py")
 MANIFESTS = ("evals/manifest.yaml", "evals/mega-observe.yaml")
 SKIP_DIRS = {".git", "node_modules", "__pycache__"}
 
@@ -83,119 +86,140 @@ def parse_requirements(text: str) -> tuple[dict[str, dict[str, str]], list[str]]
     return requirements, errors
 
 
-TESTCASE_CLASSES = {
-    "unittest.TestCase",
-    "unittest.IsolatedAsyncioTestCase",
-    "unittest.case.TestCase",
-    "unittest.async_case.TestCase",
-    "unittest.async_case.IsolatedAsyncioTestCase",
-}
-STAR_EXPORTS = {
-    "unittest": ("TestCase", "IsolatedAsyncioTestCase"),
-    "unittest.case": ("TestCase",),
-    "unittest.async_case": ("TestCase", "IsolatedAsyncioTestCase"),
+DISCOVER = """import json
+import sys
+import unittest
+
+start, pattern, top, output = sys.argv[1:5]
+
+
+def flatten(suite):
+    for item in suite:
+        if isinstance(item, unittest.TestSuite):
+            yield from flatten(item)
+        else:
+            yield item
+
+
+def skipped(test):
+    method = getattr(test, test._testMethodName, None)
+    return bool(getattr(type(test), "__unittest_skip__", False) or getattr(method, "__unittest_skip__", False))
+
+
+loader = unittest.TestLoader()
+suite = loader.discover(start, pattern=pattern, top_level_dir=top or None)
+tests, failures = [], []
+for test in flatten(suite):
+    if type(test).__module__ == "unittest.loader":
+        failures.append(test._testMethodName)
+        continue
+    module = sys.modules.get(type(test).__module__)
+    path = getattr(module, "__file__", None) or type(test).__module__
+    tests.append([path, type(test).__qualname__ + "." + test._testMethodName, skipped(test)])
+with open(output, "w", encoding="utf-8") as handle:
+    json.dump({"tests": tests, "failures": failures, "errors": loader.errors}, handle)
+"""
+DISCOVER_FLAGS = {
+    "-s": "start", "--start-directory": "start",
+    "-p": "pattern", "--pattern": "pattern",
+    "-t": "top", "--top-level-directory": "top",
 }
 
 
-def module_statements(body: list[ast.stmt]) -> list[ast.stmt]:
-    result: list[ast.stmt] = []
-    for node in body:
-        result.append(node)
-        if isinstance(node, ast.If):
-            result += module_statements(node.body) + module_statements(node.orelse)
-        elif isinstance(node, ast.Try):
-            nested = node.body + node.orelse + node.finalbody
-            for handler in node.handlers:
-                nested += handler.body
-            result += module_statements(nested)
+def discover_commands(commands: set[str]) -> list[tuple[str, str, str]]:
+    result = []
+    for command in sorted(commands):
+        try:
+            words = shlex.split(command)
+        except ValueError:
+            continue
+        if "unittest" not in words or "discover" not in words:
+            continue
+        if words.index("discover") != words.index("unittest") + 1:
+            continue
+        args = words[words.index("discover") + 1:]
+        options = {"start": ".", "pattern": "test*.py", "top": ""}
+        positional = []
+        index = 0
+        while index < len(args):
+            word = args[index]
+            name, equals, value = word.partition("=")
+            if equals and name in DISCOVER_FLAGS:
+                options[DISCOVER_FLAGS[name]] = value
+            elif word in DISCOVER_FLAGS and index + 1 < len(args):
+                options[DISCOVER_FLAGS[word]] = args[index + 1]
+                index += 1
+            elif not word.startswith("-"):
+                positional.append(word)
+            index += 1
+        for key, value in zip(("start", "pattern", "top"), positional):
+            options[key] = value
+        result.append((options["start"], options["pattern"], options["top"]))
     return result
 
 
-def import_bindings(tree: ast.Module) -> dict[str, str]:
-    bindings: dict[str, str] = {}
-    for node in module_statements(tree.body):
-        if isinstance(node, ast.Import):
-            for alias in node.names:
-                if alias.asname:
-                    bindings[alias.asname] = alias.name
-                else:
-                    top = alias.name.split(".", 1)[0]
-                    bindings[top] = top
-        elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
-            for alias in node.names:
-                if alias.name == "*":
-                    for name in STAR_EXPORTS.get(node.module, ()):
-                        bindings[name] = f"{node.module}.{name}"
-                else:
-                    bindings[alias.asname or alias.name] = f"{node.module}.{alias.name}"
-    return bindings
+def relative_path(root: Path, path: str) -> str:
+    location = Path(path)
+    if not location.is_absolute():
+        return location.as_posix()
+    try:
+        return location.resolve().relative_to(root.resolve()).as_posix()
+    except ValueError:
+        return location.as_posix()
 
 
-def qualified_name(node: ast.expr, bindings: dict[str, str]) -> str | None:
-    parts: list[str] = []
-    while isinstance(node, ast.Attribute):
-        parts.append(node.attr)
-        node = node.value
-    if not isinstance(node, ast.Name) or node.id not in bindings:
-        return None
-    return ".".join([bindings[node.id], *reversed(parts)])
-
-
-def module_test_methods(tree: ast.Module) -> tuple[set[str], set[str]]:
-    bindings = import_bindings(tree)
-    classes = {node.name: node for node in tree.body if isinstance(node, ast.ClassDef)}
-
-    def own(node: ast.ClassDef) -> set[str]:
-        return {
-            item.name for item in node.body
-            if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)) and item.name.startswith("test_")
-        }
-
-    def resolve(name: str, seen: frozenset[str]) -> tuple[bool, set[str]]:
-        node = classes[name]
-        is_case = False
-        found = own(node)
-        for base in node.bases:
-            if isinstance(base, ast.Name) and base.id in classes:
-                if base.id not in seen and base.id != name:
-                    base_case, base_methods = resolve(base.id, seen | {name})
-                    is_case = is_case or base_case
-                    found |= base_methods
-            elif qualified_name(base, bindings) in TESTCASE_CLASSES:
-                is_case = True
-        return is_case, found
-
-    discovered: set[str] = set()
-    ignored: set[str] = set()
-    for name, node in classes.items():
-        is_case, found = resolve(name, frozenset())
-        if is_case:
-            discovered.update(f"{name}.{method}" for method in found)
-        else:
-            ignored.update(f"{name}.{method}" for method in own(node))
-    return discovered, ignored
-
-
-def collect_tests(root: Path) -> tuple[dict[str, set[str]], dict[str, set[str]]]:
+def collect_tests(root: Path, commands: set[str]) -> tuple[dict[str, set[str]], dict[str, set[str]], list[str]]:
     methods: dict[str, set[str]] = {}
-    ignored: dict[str, set[str]] = {}
-    for pattern in TEST_GLOBS:
-        for path in sorted(root.glob(pattern)):
-            tree = ast.parse(path.read_text(encoding="utf-8"))
-            relative = path.relative_to(root).as_posix()
-            discovered, skipped = module_test_methods(tree)
-            if discovered:
-                methods[relative] = discovered
-            if skipped:
-                ignored[relative] = skipped
-    return methods, ignored
+    skipped: dict[str, set[str]] = {}
+    errors: list[str] = []
+    discoveries = discover_commands(commands)
+    if not discoveries:
+        errors.append("DISCOVER: CI runs no 'python -m unittest discover' command")
+    for start, pattern, top in discoveries:
+        where = f"unittest discover -s {start} -p {pattern}"
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "tests.json"
+            result = subprocess.run(
+                [sys.executable, "-B", "-c", DISCOVER, start, pattern, top, str(output)],
+                cwd=root, check=False, capture_output=True, text=True,
+                env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+            )
+            if result.returncode != 0 or not output.is_file():
+                detail = (result.stderr.strip().splitlines() or ["no output"])[-1]
+                errors.append(f"DISCOVER: {where} failed: {detail}")
+                continue
+            data = json.loads(output.read_text(encoding="utf-8"))
+        messages = data["errors"] + [""] * len(data["failures"])
+        for module, message in zip(data["failures"], messages):
+            lines = [line.strip() for line in message.splitlines() if line.strip()]
+            detail = f": {lines[-1]}" if lines else ""
+            errors.append(f"DISCOVER: {where} could not import module {module}{detail}")
+        for path, name, is_skipped in data["tests"]:
+            (skipped if is_skipped else methods).setdefault(relative_path(root, path), set()).add(name)
+    return methods, skipped, errors
 
 
-def missing_test(methods: dict[str, set[str]], ignored: dict[str, set[str]], token: str) -> str | None:
+def defined_methods(root: Path, path: str) -> set[str]:
+    location = root / path
+    if not location.is_file():
+        return set()
+    try:
+        tree = ast.parse(location.read_text(encoding="utf-8"))
+    except SyntaxError:
+        return set()
+    return {
+        node.name for node in ast.walk(tree)
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test_")
+    }
+
+
+def missing_test(root: Path, methods: dict[str, set[str]], skipped: dict[str, set[str]], token: str) -> str | None:
     path, _, name = token.partition("::")
     if name in methods.get(path, set()):
         return None
-    if name in ignored.get(path, set()):
+    if name in skipped.get(path, set()):
+        return f"test {token} that unittest skips"
+    if name.rpartition(".")[2] in defined_methods(root, path):
         return f"test {token} that unittest does not run"
     return f"missing test {token}"
 
@@ -218,15 +242,14 @@ def workflow_commands(root: Path) -> set[str]:
 
 
 def check_matrix(root: Path, requirements: dict[str, dict[str, str]]) -> tuple[dict[str, int], list[str]]:
-    errors: list[str] = []
     text = (root / VM).read_text(encoding="utf-8")
     trace_rows = rows(section(text, "Requirement traceability"), REQ_ID)
     gap_rows = rows(section(text, "Untested requirement gaps"), GAP_ID)
     orphan_rows = rows(section(text, "Tests without a requirement"), re.compile(r"`[^`]+::[^`]+`"))
     gaps = {row[0]: row for row in gap_rows}
-    methods, ignored = collect_tests(root)
     cases = manifest_cases(root)
     commands = workflow_commands(root)
+    methods, skipped, errors = collect_tests(root, commands)
     referenced_tests: set[str] = set()
     referenced_gaps: set[str] = set()
     coverage_by_req: dict[str, str] = {}
@@ -247,7 +270,7 @@ def check_matrix(root: Path, requirements: dict[str, dict[str, str]]) -> tuple[d
         inspected = False
         for token in re.findall(r"`([^`]+)`", verified_by):
             if "::" in token:
-                problem = missing_test(methods, ignored, token)
+                problem = missing_test(root, methods, skipped, token)
                 if problem:
                     errors.append(f"VM: {req_id} references {problem}")
                 else:
@@ -303,7 +326,7 @@ def check_matrix(root: Path, requirements: dict[str, dict[str, str]]) -> tuple[d
             if token not in referenced_tests and token not in listed_orphans:
                 errors.append(f"VM: test {token} traces to no requirement and is not listed as supporting")
     for token in sorted(listed_orphans):
-        problem = missing_test(methods, ignored, token)
+        problem = missing_test(root, methods, skipped, token)
         if problem:
             errors.append(f"VM: supporting-test row names {problem}")
 
