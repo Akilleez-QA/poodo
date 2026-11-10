@@ -87,12 +87,13 @@ TESTCASE_CLASSES = {
     "unittest.TestCase",
     "unittest.IsolatedAsyncioTestCase",
     "unittest.case.TestCase",
+    "unittest.async_case.TestCase",
     "unittest.async_case.IsolatedAsyncioTestCase",
 }
 STAR_EXPORTS = {
     "unittest": ("TestCase", "IsolatedAsyncioTestCase"),
     "unittest.case": ("TestCase",),
-    "unittest.async_case": ("IsolatedAsyncioTestCase",),
+    "unittest.async_case": ("TestCase", "IsolatedAsyncioTestCase"),
 }
 
 

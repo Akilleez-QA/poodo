@@ -98,6 +98,27 @@ class DemoTests(unittest.TestCase):
 """
 
 
+DISCOVER = """import sys
+import unittest
+
+
+def flatten(suite):
+    for item in suite:
+        if isinstance(item, unittest.TestSuite):
+            yield from flatten(item)
+        else:
+            yield item
+
+
+loader = unittest.TestLoader()
+suite = loader.discover(sys.argv[1], pattern="test_*.py", top_level_dir=sys.argv[1])
+if loader.errors:
+    sys.exit("".join(loader.errors))
+tests = [test for test in flatten(suite) if type(test).__module__.split(".")[0] != "unittest"]
+print(f"discovered {len(tests)}")
+"""
+
+
 class TraceCheckTests(unittest.TestCase):
     def make_repo(self, directory: Path) -> Path:
         (directory / "docs/requirements").mkdir(parents=True)
@@ -145,10 +166,13 @@ class TraceCheckTests(unittest.TestCase):
 
     def discovered(self, root: Path) -> int:
         result = subprocess.run(
-            [sys.executable, "-B", "-m", "unittest", "discover", "-s", str(root / "evals"), "-p", "test_*.py"],
+            [sys.executable, "-B", "-c", DISCOVER, str(root / "evals")],
             check=False, capture_output=True, text=True, cwd=root,
         )
-        return int(re.search(r"^Ran (\d+) tests?", result.stderr, re.MULTILINE).group(1))
+        match = re.fullmatch(r"discovered (\d+)\n", result.stdout)
+        if result.returncode != 0 or match is None:
+            self.fail(f"unittest discovery failed (exit {result.returncode}):\n{result.stdout}{result.stderr}")
+        return int(match.group(1))
 
     def test_minimal_repository_passes(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -172,6 +196,8 @@ class TraceCheckTests(unittest.TestCase):
             ("import unittest as ut", "ut.TestCase"),
             ("from unittest import *", "TestCase"),
             ("from unittest.case import *", "TestCase"),
+            ("from unittest.async_case import *", "TestCase"),
+            ("from unittest.async_case import *", "IsolatedAsyncioTestCase"),
             ("from unittest import IsolatedAsyncioTestCase", "IsolatedAsyncioTestCase"),
             ("import unittest", "unittest.IsolatedAsyncioTestCase"),
             ("from unittest.async_case import IsolatedAsyncioTestCase as A", "A"),
@@ -204,6 +230,11 @@ class TraceCheckTests(unittest.TestCase):
             result = self.check(root)
             self.assertEqual(result.returncode, 1)
             self.assertIn("missing test evals/test_demo.py::DemoTests.test_gone", result.stdout)
+        with self.subTest("discovery failure is reported"), tempfile.TemporaryDirectory() as directory:
+            root = self.make_repo(Path(directory))
+            (root / "evals/test_demo.py").write_text("import missing_module_for_trace_test\n", encoding="utf-8")
+            with self.assertRaisesRegex(AssertionError, r"(?s)unittest discovery failed .*missing_module_for_trace_test"):
+                self.discovered(root)
         for label, replacement in (
             ("no base class", "class DemoTests:"),
             ("non-TestCase base class", "class Base:\n    pass\n\n\nclass DemoTests(Base):"),
