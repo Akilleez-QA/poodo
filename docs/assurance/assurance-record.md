@@ -15,6 +15,37 @@
 
 Rolling record of requirements, design, test, code-quality and configuration analyses (SWEHB 5.21, 5.22, 5.23, 5.25, 5.26) and the peer-review summary (5.03). Newest entry first.
 
+## Entry 2026-11-10 — findings sweep `07d033a`..`89c25a9`
+
+- Analyzed by: records lane (agent) for the family findings sweep. Agent analysis is not independent.
+- Inputs: poodo main `aeba967` plus the sweep commits `07d033a`..`89c25a9` on `fix/findings-sweep`; Python 3.10.22 and 3.14.9 with PyYAML 6.0.3; ruff 0.17.0; gitleaks 8.30.1 locally (CI pins 8.28.0).
+
+### Testing analysis
+
+- Technique: each untested gap UG-22 to UG-37 got tests named after it (`test_ug_NN_*`), plus two `test_f_4_*` tests of combined failures and missing files. The sweep author reports that 26 subtests failed against the unchanged scripts, and that switching each existing rule off one at a time was caught by a UG test in all 32 cases; this lane did not repeat that mutation run.
+- Result: 49 new tests (26 in `evals/test_check_capsule.py`, 23 in `evals/test_validate_skill.py`). Trace: 46 requirements, 25 Full, 4 Partial, 17 None; 21 registered untested gaps, all behavioral (UG-01 to UG-21).
+- Defects the tests exposed, fixed in the same commits. Capsule checker: `objective`, `next_step`, `highest_justified_claim`, `required_runtime_observation`, `who_controls_next_test` and claim `text` passed when null, `[]` or `{}`, because `str(None)` is `"None"`; the collection set made the record reported as a duplicate depend on the hash seed. Package validator: removing the opening `POODO_CONTINUATION_V3_0` marker passed, because it is a substring of `END_POODO_CONTINUATION_V3_0`; a non-mapping `metadata`, a non-string `default_prompt` or `short_description`, or a non-UTF-8 file raised a traceback.
+
+### Source code quality
+
+| Tool | Command | Findings |
+|---|---|---|
+| ruff 0.17.0 (defaults) | `ruff check --no-cache .` | 0 after the sweep. The 12 findings in the 2026-11-08 entry were fixed without Python 3.11-only APIs: FURB162 and UP017 by switching to `date.fromisoformat(value[:10])` and `time.gmtime()`; TRY004 by raising `TypeError` for a non-mapping front matter, with the message unchanged; ISC004 by parenthesizing the joined strings; I001 by sorting imports |
+| gitleaks 8.30.1 | `gitleaks git --redact --no-banner --exit-code 1 --config .gitleaks.toml .` | No leaks found in the full history |
+
+ruff and gitleaks are now CI jobs in `.github/workflows/checks.yml`. The ruff job runs `uvx ruff@0.17.0 check .`. The gitleaks job downloads the 8.28.0 release, checks it against the release's `checksums.txt`, and scans the full history (`fetch-depth: 0`). The repository has no ruff configuration, so ruff assumes the newest Python target and some suggested fixes would break Python 3.10; the CI matrix on 3.10 catches that.
+
+### Findings status
+
+| ID | Status | Evidence |
+|---|---|---|
+| F-4 | Closed in `07d033a`..`89c25a9` | `evals/test_validate_skill.py` covers every failure path of REQ-PO-022 to REQ-PO-027 (UG-28 to UG-33 closed) |
+| F-5 | Closed in `07d033a`..`89c25a9` | `evals/test_check_capsule.py` `test_ug_22_*` to `test_ug_27_*` and `test_ug_34_*` to `test_ug_37_*` (UG-22 to UG-27 and UG-34 to UG-37 closed) |
+| F-6 | Accepted, unchanged | Branch protection is a repository setting; no change in this sweep |
+| F-7 | Closed in `07d033a`..`89c25a9` | ruff and gitleaks CI jobs in `.github/workflows/checks.yml` |
+
+The behavioral gaps UG-01 to UG-21 stay open; they need recorded agent trials.
+
 ## Entry 2026-11-08 — baseline `b969150` (documentation baseline PR)
 
 - Analyzed by: documentation lane (agent). Agent analysis is not independent.
@@ -66,10 +97,10 @@ Dispositions: S506 is a false positive (`UniqueKeyLoader` subclasses `yaml.SafeL
 | F-1 | S4 | Control documents cited baseline commits that are not in this history | docs/ | none | Closed in this PR |
 | F-2 | S4 | SCMP listed stale action versions and CHANGELOG version form | docs/configuration | none | Closed in this PR |
 | F-3 | S4 | Cstack ICD pinned an unreachable Cstack commit | docs/icd/icd-cstack.md | none | Closed in this PR |
-| F-4 | S3 | `validate_skill.py` has no tests; a regression in any failure path would pass CI | scripts/validate_skill.py | none | Open (UG-28 to UG-33) |
-| F-5 | S3 | Ten capsule-checker rules or options have no test | scripts/check_capsule.py | none | Open (UG-22 to UG-27, UG-34 to UG-37) |
+| F-4 | S3 | `validate_skill.py` has no tests; a regression in any failure path would pass CI | scripts/validate_skill.py | none | Closed in `07d033a`..`89c25a9` (entry 2026-11-10) |
+| F-5 | S3 | Ten capsule-checker rules or options have no test | scripts/check_capsule.py | none | Closed in `07d033a`..`89c25a9` (entry 2026-11-10) |
 | F-6 | S4 | No branch protection on `main`; review is procedural | repository settings | none | Accepted (SCMP §3) |
-| F-7 | S4 | ruff and gitleaks are not CI gates | .github/workflows/checks.yml | none | Accepted (SMP §6) |
+| F-7 | S4 | ruff and gitleaks are not CI gates | .github/workflows/checks.yml | none | Closed in `07d033a`..`89c25a9` (entry 2026-11-10) |
 
 No major (S1 or S2) finding, so no issue was filed.
 
@@ -82,3 +113,4 @@ The repository does what its docs now say, within structural scope. The validato
 | Version | Date | Commit | Change | Reviewed in |
 |---|---|---|---|---|
 | 1.0 | 2026-11-08 | `b969150` | Initial baseline entry | this PR |
+| 1.1 | 2026-11-10 | findings sweep `07d033a`..`89c25a9` | Entry 2026-11-10: F-4, F-5 and F-7 closed; validator defects found by the new tests recorded; ruff and gitleaks results | this PR |

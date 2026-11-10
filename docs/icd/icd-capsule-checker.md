@@ -43,7 +43,7 @@ The capsule's fields, types and allowed values are in the [data dictionary ยง2โ€
 |---|---|---|---|---|
 | Structure passes | 0 | stdout: `POODO capsule structure passed; epistemic and behavioral correctness remain untested.` | Treat as structural only | `test_valid_capsule` |
 | Structure invalid | 1 | stderr: `INVALID POODO capsule structure:`, one `- <path>: <reason>` line per error, then `No judgment about epistemic truth was performed.` | Fix every listed field | `test_rejects_failed_prediction_resurrection` and others |
-| File unreadable, not UTF-8, YAML error, duplicate key or non-string key | 2 | stderr: `INVALID: could not load capsule: <reason>` | Fix the file | `test_rejects_nonstring_mapping_keys`; duplicate and unreadable untested (UG-22, UG-37) |
+| File unreadable, not UTF-8, YAML error, duplicate key or non-string key | 2 | stderr: `INVALID: could not load capsule: <reason>` | Fix the file | `test_rejects_nonstring_mapping_keys`, `test_ug_22_duplicate_keys_are_load_errors_at_any_depth`, `test_ug_37_*` |
 | Oversize without `capsule_overflow` | 1 | `- size: approximately N tokens exceeds ceiling C; emit a non-empty capsule_overflow rather than silently deleting critical state` | Declare overflow or raise the ceiling deliberately | oversize tests |
 
 All errors are collected before exit, so one run lists every structural problem. Example run at the baseline:
@@ -87,3 +87,4 @@ Change the checker, the continuity reference and the data dictionary together. A
 | Version | Date | Commit | Change | Reviewed in |
 |---|---|---|---|---|
 | 1.0 | 2026-11-08 | `b969150` | Initial baseline | this PR |
+| 1.1 | 2026-11-10 | findings sweep `07d033a`..`89c25a9` | Exit 2 tests for duplicate keys and unreadable or non-UTF-8 files cited | this PR |

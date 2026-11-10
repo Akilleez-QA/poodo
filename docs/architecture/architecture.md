@@ -87,11 +87,11 @@ flowchart LR
 | Optional research charter | `references/mega-observe.md`, `assets/mega-observe-charter.yaml` | Mega Observe protocol and the charter to fill before a run | Explicit request → charter, budget gates | REQ-PO-017, REQ-PO-018 |
 | Package validator | `scripts/validate_skill.py` | Required files, front matter, host metadata, reference links, placeholders, schema literals, execute bits | Checkout → exit 0 or 1 with messages | REQ-PO-022, REQ-PO-023, REQ-PO-024, REQ-PO-025, REQ-PO-026, REQ-PO-027, REQ-PO-028, REQ-PO-044 |
 | Capsule checker | `scripts/check_capsule.py` | Structure and referential integrity of one capsule file | YAML file → exit 0, 1 or 2 with messages | REQ-PO-009, REQ-PO-029, REQ-PO-030, REQ-PO-031, REQ-PO-032, REQ-PO-033, REQ-PO-034, REQ-PO-035, REQ-PO-036, REQ-PO-037, REQ-PO-038, REQ-PO-039, REQ-PO-040, REQ-PO-041, REQ-PO-042, REQ-PO-043, REQ-PO-044 |
-| Checker regression tests | `evals/test_check_capsule.py`, `evals/fixtures/` | Subprocess tests of the capsule checker | Fixtures → pass/fail | infrastructure (verifies the capsule checker) |
+| Checker regression tests | `evals/test_check_capsule.py`, `evals/test_validate_skill.py`, `evals/fixtures/` | Subprocess tests of the capsule checker and the package validator | Fixtures and mutated package copies → pass/fail | infrastructure (verifies both validators) |
 | Behavioral evaluation material | `evals/manifest.yaml`, `evals/mega-observe.yaml`, `evals/protocol.md`, `evals/rubric.md`, `evals/run-record.template.yaml` | 14 base cases, 8 Mega Observe probes, grading rules, run-record template | Frozen configuration → graded trials (none recorded) | infrastructure (verification material for REQ-PO-001 to REQ-PO-021) |
 | Examples | `examples/` | Synthetic illustrations, not measured runs | — | infrastructure (documentation) |
 | Docs tooling | `tools/` | Trace and link check; generator for the VDD and STR | Docs and test tree → pass/fail; generated reports | REQ-PO-045, REQ-PO-046 |
-| CI | `.github/workflows/checks.yml` | Runs every check on Python 3.10 and 3.14 on each push and PR | Commit → check status | infrastructure |
+| CI | `.github/workflows/checks.yml` | Runs every check on Python 3.10 and 3.14, plus ruff 0.17.0 and a gitleaks 8.28.0 history scan, on each push and PR | Commit → check status | infrastructure |
 
 ## 5. Execution concept
 
@@ -126,7 +126,7 @@ The validators read a few small files and hold one capsule in memory. The capsul
 ## 9. Quality attributes
 
 - Maintainability: one entry file, one reference per concern, two small scripts, one pinned dependency (REQ-PO-044).
-- Testability: the capsule checker is a pure `validate(data, raw_text, ceiling)` function behind a thin CLI; tests drive the CLI. The package validator has no tests (gaps UG-28 to UG-33).
+- Testability: the capsule checker is a pure `validate(data, raw_text, ceiling)` function behind a thin CLI; tests drive the CLI. `evals/test_validate_skill.py` runs the package validator against a temporary copy of the package.
 - Portability: CI runs on Python 3.10 and 3.14 on `ubuntu-latest`. Other operating systems are untested.
 - Security: no network, no writes, `yaml.SafeLoader` subclass, no `eval`. See the [SMP §7](../plan/software-management-plan.md#7-security-privacy-and-secure-coding).
 - Usability: every pass message states what it does not establish.
@@ -144,3 +144,4 @@ The validators read a few small files and hold one capsule in memory. The capsul
 |---|---|---|---|---|
 | 1.0 | 2026-10-30 | squashed into `36bfe78` | Context, components, control flow and boundaries | PR #12 |
 | 2.0 | 2026-11-08 | `b969150` | Family format; decisions table; Mermaid static and runtime views; components with requirement allocation; execution, failure, resource and quality sections; docs tooling | this PR |
+| 2.1 | 2026-11-10 | findings sweep `07d033a`..`89c25a9` | Package-validator tests; ruff and gitleaks CI jobs | this PR |

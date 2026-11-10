@@ -47,7 +47,7 @@ Invocation: Codex uses `$poodo`. Claude Code uses `/poodo` and ignores `agents/o
 | Host has no web research tool | The skill tells the agent to stop before Orient and report the evidence boundary | Supply research access or accept the boundary | none (gap UG-10) |
 | Host has no subagents | The agent records non-use at each transition | none | none (gap UG-13) |
 | Host has no goal tools | The agent must not simulate goal state | none | none (gap UG-15) |
-| Package incomplete or metadata changed | `validate_skill.py` exits 1 and names the problem | Restore the files | CI only shows the real package passes (gaps UG-28 to UG-33) |
+| Package incomplete or metadata changed | `validate_skill.py` exits 1 and names the problem | Restore the files | `evals/test_validate_skill.py` |
 
 ## 5. Identity, versioning and compatibility
 
@@ -79,3 +79,4 @@ A change to the front matter, host metadata or file layout needs the package val
 |---|---|---|---|---|
 | 1.0 | 2026-11-08 | `b969150` | Initial baseline | this PR |
 | 1.1 | 2026-11-08 | docs/reader-first | Claude Code install path and `/poodo` invocation added to §2 and §3 | docs/reader-first PR |
+| 1.2 | 2026-11-10 | findings sweep `07d033a`..`89c25a9` | Package-validator failure paths now tested | this PR |

@@ -43,8 +43,8 @@ Trunk-based. Every change is a pull request to `main`; the maintainer merges it 
 | Dependency | PyYAML 6.0.3 | [requirements-dev.txt](../../requirements-dev.txt) |
 | Test runner | `unittest` (standard library) | checks.yml |
 | CI | GitHub Actions on `ubuntu-latest`, `actions/checkout@v7`, `actions/setup-python@v7` | checks.yml |
-| Static analysis / type check | None in CI; ruff run by hand and recorded in the assurance record | [assurance record](../assurance/assurance-record.md) |
-| Secret scanning | `.gitleaks.toml` (default rules); gitleaks run by hand, not a CI gate | [.gitleaks.toml](../../.gitleaks.toml) |
+| Static analysis / type check | ruff 0.17.0, default rules, as a CI job (`uvx ruff@0.17.0 check .` via `astral-sh/setup-uv@v7`); no type checker | checks.yml |
+| Secret scanning | gitleaks 8.28.0 as a CI job over the full git history, release archive checked against its published SHA-256; `.gitleaks.toml` (default rules) | checks.yml; [.gitleaks.toml](../../.gitleaks.toml) |
 | Dependency updates | Dependabot, weekly, for GitHub Actions and pip, up to 3 open PRs each | [dependabot.yml](../../.github/dependabot.yml) |
 
 ## 5. Verification and validation approach
@@ -62,13 +62,15 @@ There is one maintainer, so there is no organizational independence. Agent revie
 | Gate | Command | Fails on | Record |
 |---|---|---|---|
 | Package validator | `python scripts/validate_skill.py` | Missing files, front matter, host metadata, broken reference links, placeholders, schema literals, execute bits | CI; STR |
-| Checker regression tests | `python -m unittest discover -s evals -p 'test_*.py' -v` | Any capsule-checker regression | CI; STR |
+| Checker regression tests | `python -m unittest discover -s evals -p 'test_*.py' -v` | Any capsule-checker or package-validator regression | CI; STR |
 | Capsule fixture | `python scripts/check_capsule.py evals/fixtures/valid-capsule.yaml` | The valid fixture failing | CI; STR |
 | Trace and link check | `python tools/check_trace.py` | Untraced requirement, missing test, untraced test, unregistered gap, SDD allocation gap, data-dictionary gap, dead link | CI; STR |
 | Trace checker tests | `python -m unittest discover -s tools -p 'test_*.py' -v` | Any trace-checker regression | CI; STR |
+| Static analysis | `uvx ruff@0.17.0 check .` | Any ruff default-rule finding | CI |
+| Secret scan | `gitleaks git --redact --no-banner --exit-code 1 --config .gitleaks.toml .` | Any secret found in the git history | CI |
 | Peer review | Pull request | Maintainer does not approve | PR; SAR summary |
 
-Static analysis (ruff) and secret scanning (gitleaks) are not CI gates. They are run by hand at each documentation baseline and recorded in the assurance record.
+Static analysis (ruff) and secret scanning (gitleaks) are CI gates since the 2026-11-10 findings sweep. ruff's security rules (`--select S`) are not in the gate; they are run by hand at each documentation baseline and recorded in the assurance record.
 
 ## 7. Security, privacy and secure coding
 
@@ -118,7 +120,7 @@ Reviewed at every release. Likelihood (L) and consequence (C) on a 1–5 scale.
 | ID | Risk | L | C | Mitigation | Status | Issue |
 |---|---|---|---|---|---|---|
 | R-1 | A reader takes structural checks or synthetic examples as proof that the skill improves agent behavior | 3 | 3 | Every pass message and doc states the limit; behavioral rows stay None/Partial; trace check | Open | none |
-| R-2 | Validator rules regress unnoticed: `validate_skill.py` has no tests and several checker rules are untested (UG-22 to UG-37) | 3 | 2 | Gaps registered in the verification matrix; add tests when touching the code | Open | none |
+| R-2 | Validator rules regress unnoticed | 1 | 2 | Every validator requirement (REQ-PO-022 to REQ-PO-043) has Full test coverage (former gaps UG-22 to UG-37 closed 2026-11-10); new rules need a test or a registered gap | Mitigated | none |
 | R-3 | The Cstack snapshot drifts from POODO main and readers assume they match | 2 | 2 | Cstack ICD records the pin and a byte comparison; re-run on each pin change | Open | none |
 | R-4 | An agent following the skill acts beyond what the user intended (for example an expensive Mega Observe run) | 2 | 3 | Authority invariant, explicit-only invocation, budget charter; host permissions | Open | none |
 | R-5 | Unpinned action tags (`@v7`) change behavior under CI | 2 | 1 | Dependabot; CI runs on every PR | Accepted | none |
@@ -140,3 +142,4 @@ The [documentation index](../README.md) lists every control document and guide.
 | Version | Date | Commit | Change | Reviewed in |
 |---|---|---|---|---|
 | 1.0 | 2026-11-08 | `b969150` | Initial baseline | this PR |
+| 1.1 | 2026-11-10 | findings sweep `07d033a`..`89c25a9` | §4 and §6: ruff and gitleaks are CI gates (F-7 closed); R-2 mitigated by validator tests (F-4, F-5 closed) | this PR |

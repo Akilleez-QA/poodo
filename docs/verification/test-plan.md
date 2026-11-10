@@ -19,19 +19,21 @@ Two kinds of verification apply. Structural checks run in CI and test the valida
 
 ## 2. Test levels
 
-All commands run from the checkout root and are identical to the `run:` steps in [checks.yml](../../.github/workflows/checks.yml).
+All commands run from the checkout root and are identical to the `run:` steps in [checks.yml](../../.github/workflows/checks.yml). S1–S5 run on Python 3.10 and 3.14; S6 and S7 run once per CI run in their own jobs.
 
 | ID | Level | What it covers | Location | Command |
 |---|---|---|---|---|
 | S1 | System (package) | The real package passes the package validator | `scripts/validate_skill.py` | `python scripts/validate_skill.py` |
-| S2 | Unit / regression | 13 subprocess tests of the capsule checker | `evals/test_check_capsule.py` | `python -m unittest discover -s evals -p 'test_*.py' -v` |
+| S2 | Unit / regression | 61 subprocess tests: 39 of the capsule checker and 22 of the package validator on a temporary package copy | `evals/test_check_capsule.py`, `evals/test_validate_skill.py` | `python -m unittest discover -s evals -p 'test_*.py' -v` |
 | S3 | System (fixture) | The valid capsule fixture passes | `evals/fixtures/valid-capsule.yaml` | `python scripts/check_capsule.py evals/fixtures/valid-capsule.yaml` |
 | S4 | Documentation | Requirement, design, test and link trace | `tools/check_trace.py` | `python tools/check_trace.py` |
-| S5 | Unit | 10 tests of the trace checker | `tools/test_check_trace.py` | `python -m unittest discover -s tools -p 'test_*.py' -v` |
+| S5 | Unit | 23 tests: 10 of the trace checker and 13 of the release-document generator | `tools/test_check_trace.py`, `tools/test_gen_release_docs.py` | `python -m unittest discover -s tools -p 'test_*.py' -v` |
+| S6 | Static analysis | ruff 0.17.0 default rules over the repository | whole tree | `uvx ruff@0.17.0 check .` |
+| S7 | Security | gitleaks 8.28.0 over the full git history | whole history | `gitleaks git --redact --no-banner --exit-code 1 --config .gitleaks.toml .` |
 | TP-2 | Acceptance (behavioral) | Agent behavior against the manifests | `evals/` | manual; see §7 |
-| — | Regression | All of S1–S5 on every push and pull request | CI | the five commands above |
+| — | Regression | All of S1–S7 on every push and pull request | CI | the seven commands above |
 
-No performance or security test level exists.
+No performance test level exists. S7 is the only security check; it scans for committed secrets and does not test the software.
 
 ## 3. Test environment
 
@@ -40,13 +42,13 @@ No performance or security test level exists.
 | OS | `ubuntu-latest` (GitHub-hosted) | checks.yml |
 | Runtime | Python 3.10 and 3.14 | checks.yml matrix |
 | Dependency | PyYAML 6.0.3 | requirements-dev.txt |
-| External services | None for S1–S5. TP-2 needs an agent host, a model and web access | — |
+| External services | None for S1–S5. S6 and S7 download ruff and gitleaks from their release hosts. TP-2 needs an agent host, a model and web access | — |
 
 Local runs on another OS are allowed; the STR records the versions used.
 
 ## 4. Pass criteria and acceptance
 
-S1–S5 must all exit 0 on both Python versions. No known failures are accepted. A behavioral claim needs a TP-2 run that meets thresholds frozen before scoring; [evaluation.md](../../references/evaluation.md) proposes thresholds but none are adopted.
+S1–S5 must all exit 0 on both Python versions, and S6 and S7 must exit 0. No known failures are accepted. A behavioral claim needs a TP-2 run that meets thresholds frozen before scoring; [evaluation.md](../../references/evaluation.md) proposes thresholds but none are adopted.
 
 ## 5. Coverage
 
@@ -59,7 +61,7 @@ Not measured: no coverage tool is pinned in `requirements-dev.txt`. Requirement 
 | `evals/fixtures/valid-capsule.yaml` | Passing capsule, revision 2 with a parent | S2, S3 |
 | `evals/fixtures/invalid-resurrection.yaml` | Prediction status returns after a terminal state | S2 |
 | `evals/fixtures/invalid-truncated-evidence.yaml` | Truncated evidence supporting a claim | S2 |
-| Generated in temporary directories | Mutated copies of the valid capsule; minimal repositories for the trace checker | S2, S5 |
+| Generated in temporary directories | Mutated copies of the valid capsule; mutated copies of the package for the package validator; minimal repositories for the trace checker | S2, S5 |
 
 All fixtures are synthetic.
 
@@ -72,7 +74,7 @@ Automated suites S1–S5: the code is the procedure. Run them with the commands 
 - Purpose / requirements: every Full and Partial row in the verification matrix; REQ-PO-044.
 - Preconditions: clean checkout; Python 3.10 and 3.14 available.
 - Steps: for each version, create a virtual environment, install `requirements-dev.txt`, run S1–S5.
-- Expected result and pass/fail criteria: each command exits 0; S2 reports `Ran 13 tests` and `OK`; S5 reports `Ran 10 tests` and `OK`; S4 prints `trace check passed`.
+- Expected result and pass/fail criteria: each command exits 0; S2 reports `Ran 61 tests` and `OK`; S5 reports `Ran 23 tests` and `OK`; S4 prints `trace check passed`.
 - Last run: 2026-11-08, see the STR in [reports](reports/README.md) for the commit and output digests.
 
 ### TP-2 — Behavioral trial
@@ -94,8 +96,6 @@ Automated suites S1–S5: the code is the procedure. Run them with the commands 
 
 ## 8. Test risks and limitations
 
-- The package validator's failure paths have no tests (gaps UG-28 to UG-33); S1 shows only that the current package passes.
-- Several capsule-checker rules are untested (UG-22 to UG-27, UG-34 to UG-37).
 - No agent trial exists, so no behavioral requirement has a result.
 - CI runs on Linux only.
 
@@ -108,3 +108,4 @@ See the [verification matrix](verification-matrix.md).
 | Version | Date | Commit | Change | Reviewed in |
 |---|---|---|---|---|
 | 1.0 | 2026-11-08 | `b969150` | Initial baseline | this PR |
+| 1.1 | 2026-11-10 | findings sweep `07d033a`..`89c25a9` | S2 adds package-validator tests; S5 counts updated; S6 ruff and S7 gitleaks added; validator test-gap risks removed | this PR |

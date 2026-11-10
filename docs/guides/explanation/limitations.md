@@ -33,8 +33,6 @@ Do not use a POODO-guided agent's output as the sole basis for a safety, enginee
 | Limitation | Effect | Where tracked |
 |---|---|---|
 | No behavioral trial recorded | REQ-PO-001 to REQ-PO-021 have no result | Verification matrix UG-01 to UG-21 |
-| Package validator has no tests | A regression in its failure paths would pass CI | UG-28 to UG-33 |
-| Several capsule-checker rules untested | Same | UG-22 to UG-27, UG-34 to UG-37 |
 | The research gate needs web access | Hosts without it stop before Orient | REQ-PO-010 |
 | The full loop is slow and costly | Wrong tool for routine questions | REQ-PO-001, REQ-PO-021 |
 | The checker reads one capsule | It cannot compare sibling capsules or follow locators | [Capsule checker ICD](../../icd/icd-capsule-checker.md) |
