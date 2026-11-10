@@ -133,6 +133,14 @@ Each gap is a behavior the software or the skill is meant to have that no automa
 | `tools/test_check_trace.py::TraceCheckTests.test_unallocated_requirement_fails` | Infrastructure: documentation trace check |
 | `tools/test_check_trace.py::TraceCheckTests.test_dead_link_and_anchor_fail` | Infrastructure: documentation trace check |
 | `tools/test_check_trace.py::TraceCheckTests.test_command_not_in_ci_fails` | Infrastructure: documentation trace check |
+| `tools/test_gen_release_docs.py::GenReleaseDocsTests.test_clean_tree_is_baselined_at_head` | Infrastructure: release-record generator (dirty-tree baseline and pass condition; 2026-11-09 backfill review) |
+| `tools/test_gen_release_docs.py::GenReleaseDocsTests.test_dirty_tree_report_does_not_claim_head_as_baseline` | Infrastructure: release-record generator (dirty-tree baseline and pass condition; 2026-11-09 backfill review) |
+| `tools/test_gen_release_docs.py::GenReleaseDocsTests.test_dirty_tree_without_flag_is_refused` | Infrastructure: release-record generator (dirty-tree baseline and pass condition; 2026-11-09 backfill review) |
+| `tools/test_gen_release_docs.py::GenReleaseDocsTests.test_failed_trace_gate_does_not_report_all_passed` | Infrastructure: release-record generator (dirty-tree baseline and pass condition; 2026-11-09 backfill review) |
+| `tools/test_gen_release_docs.py::GenReleaseDocsTests.test_skipped_test_does_not_report_all_passed` | Infrastructure: release-record generator (dirty-tree baseline and pass condition; 2026-11-09 backfill review) |
+| `tools/test_gen_release_docs.py::GenReleaseDocsTests.test_suite_result_counts_every_non_pass_outcome` | Infrastructure: release-record generator (dirty-tree baseline and pass condition; 2026-11-09 backfill review) |
+| `tools/test_gen_release_docs.py::GenReleaseDocsTests.test_suite_that_runs_no_tests_does_not_report_all_passed` | Infrastructure: release-record generator (dirty-tree baseline and pass condition; 2026-11-09 backfill review) |
+| `tools/test_gen_release_docs.py::GenReleaseDocsTests.test_untracked_file_counts_as_dirty` | Infrastructure: release-record generator (dirty-tree baseline and pass condition; 2026-11-09 backfill review) |
 
 ## Behavioral verification procedure
 
@@ -144,3 +152,4 @@ Before trials, freeze the baseline and candidate commits, model and configuratio
 |---|---|---|---|---|
 | 1.0 | 2026-10-30 | squashed into `36bfe78` | Matrix for REQ-PO-001 to REQ-PO-021 at a pre-squash commit not in this history | PR #13 |
 | 2.0 | 2026-11-08 | `b969150` | Family format; one row per requirement with coverage and gap; rows for tool requirements REQ-PO-022 to REQ-PO-044; untested-gap register; supporting-test table; trace check in CI; results moved to the STR | this PR |
+| 2.1 | 2026-11-10 | review backfill | Infrastructure rows for the release-record generator tests (a dirty tree is never reported as the HEAD baseline; skipped, unrun or failed suites and a failed trace gate never report all passed); the trace check counts only tests unittest discovers | this PR |
