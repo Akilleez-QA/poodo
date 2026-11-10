@@ -83,18 +83,82 @@ def parse_requirements(text: str) -> tuple[dict[str, dict[str, str]], list[str]]
     return requirements, errors
 
 
-def test_methods(root: Path) -> dict[str, set[str]]:
+TESTCASE_BASES = {"TestCase", "IsolatedAsyncioTestCase"}
+
+
+def testcase_aliases(tree: ast.Module) -> tuple[set[str], set[str]]:
+    modules: set[str] = set()
+    names: set[str] = set()
+    for node in tree.body:
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name == "unittest":
+                    modules.add(alias.asname or alias.name)
+        elif isinstance(node, ast.ImportFrom) and node.module == "unittest":
+            for alias in node.names:
+                if alias.name in TESTCASE_BASES:
+                    names.add(alias.asname or alias.name)
+    return modules, names
+
+
+def module_test_methods(tree: ast.Module) -> tuple[set[str], set[str]]:
+    modules, names = testcase_aliases(tree)
+    classes = {node.name: node for node in tree.body if isinstance(node, ast.ClassDef)}
+
+    def own(node: ast.ClassDef) -> set[str]:
+        return {
+            item.name for item in node.body
+            if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)) and item.name.startswith("test_")
+        }
+
+    def resolve(name: str, seen: frozenset[str]) -> tuple[bool, set[str]]:
+        node = classes[name]
+        is_case = False
+        found = own(node)
+        for base in node.bases:
+            if isinstance(base, ast.Name) and base.id in names:
+                is_case = True
+            elif isinstance(base, ast.Attribute) and isinstance(base.value, ast.Name) and base.value.id in modules and base.attr in TESTCASE_BASES:
+                is_case = True
+            elif isinstance(base, ast.Name) and base.id in classes and base.id not in seen and base.id != name:
+                base_case, base_methods = resolve(base.id, seen | {name})
+                is_case = is_case or base_case
+                found |= base_methods
+        return is_case, found
+
+    discovered: set[str] = set()
+    ignored: set[str] = set()
+    for name, node in classes.items():
+        is_case, found = resolve(name, frozenset())
+        if is_case:
+            discovered.update(f"{name}.{method}" for method in found)
+        else:
+            ignored.update(f"{name}.{method}" for method in own(node))
+    return discovered, ignored
+
+
+def collect_tests(root: Path) -> tuple[dict[str, set[str]], dict[str, set[str]]]:
     methods: dict[str, set[str]] = {}
+    ignored: dict[str, set[str]] = {}
     for pattern in TEST_GLOBS:
         for path in sorted(root.glob(pattern)):
             tree = ast.parse(path.read_text(encoding="utf-8"))
             relative = path.relative_to(root).as_posix()
-            for node in tree.body:
-                if isinstance(node, ast.ClassDef):
-                    for item in node.body:
-                        if isinstance(item, ast.FunctionDef) and item.name.startswith("test_"):
-                            methods.setdefault(relative, set()).add(f"{node.name}.{item.name}")
-    return methods
+            discovered, skipped = module_test_methods(tree)
+            if discovered:
+                methods[relative] = discovered
+            if skipped:
+                ignored[relative] = skipped
+    return methods, ignored
+
+
+def missing_test(methods: dict[str, set[str]], ignored: dict[str, set[str]], token: str) -> str | None:
+    path, _, name = token.partition("::")
+    if name in methods.get(path, set()):
+        return None
+    if name in ignored.get(path, set()):
+        return f"test {token} that unittest does not run"
+    return f"missing test {token}"
 
 
 def manifest_cases(root: Path) -> set[str]:
@@ -121,7 +185,7 @@ def check_matrix(root: Path, requirements: dict[str, dict[str, str]]) -> tuple[d
     gap_rows = rows(section(text, "Untested requirement gaps"), GAP_ID)
     orphan_rows = rows(section(text, "Tests without a requirement"), re.compile(r"`[^`]+::[^`]+`"))
     gaps = {row[0]: row for row in gap_rows}
-    methods = test_methods(root)
+    methods, ignored = collect_tests(root)
     cases = manifest_cases(root)
     commands = workflow_commands(root)
     referenced_tests: set[str] = set()
@@ -144,9 +208,9 @@ def check_matrix(root: Path, requirements: dict[str, dict[str, str]]) -> tuple[d
         inspected = False
         for token in re.findall(r"`([^`]+)`", verified_by):
             if "::" in token:
-                path, _, name = token.partition("::")
-                if name not in methods.get(path, set()):
-                    errors.append(f"VM: {req_id} references missing test {token}")
+                problem = missing_test(methods, ignored, token)
+                if problem:
+                    errors.append(f"VM: {req_id} references {problem}")
                 else:
                     referenced_tests.add(token)
                     automated = True
@@ -200,9 +264,9 @@ def check_matrix(root: Path, requirements: dict[str, dict[str, str]]) -> tuple[d
             if token not in referenced_tests and token not in listed_orphans:
                 errors.append(f"VM: test {token} traces to no requirement and is not listed as supporting")
     for token in sorted(listed_orphans):
-        path, _, name = token.partition("::")
-        if name not in methods.get(path, set()):
-            errors.append(f"VM: supporting-test row names missing test {token}")
+        problem = missing_test(methods, ignored, token)
+        if problem:
+            errors.append(f"VM: supporting-test row names {problem}")
 
     counts = {
         "requirements": sum(1 for r in requirements.values() if not r.get("Status", "").startswith("Deleted")),

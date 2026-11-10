@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import importlib.util
+import re
 import shutil
 import subprocess
 import sys
@@ -67,6 +68,24 @@ SDD = """# Design
 | Tooling | `tools/` | Trace | infrastructure |
 """
 
+INHERITED_TEST = """import unittest
+from unittest import TestCase as Case
+
+
+class Mixin:
+    def test_two(self):
+        pass
+
+
+class Base(unittest.IsolatedAsyncioTestCase, Case):
+    pass
+
+
+class DemoTests(Mixin, Base):
+    async def test_one(self):
+        pass
+"""
+
 TEST = """import unittest
 
 
@@ -124,10 +143,24 @@ class TraceCheckTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout)
         self.assertIn("trace check passed", result.stdout)
 
+    def discovered(self, root: Path) -> int:
+        result = subprocess.run(
+            [sys.executable, "-B", "-m", "unittest", "discover", "-s", str(root / "evals"), "-p", "test_*.py"],
+            check=False, capture_output=True, text=True, cwd=root,
+        )
+        return int(re.search(r"^Ran (\d+) tests?", result.stderr, re.MULTILINE).group(1))
+
     def test_minimal_repository_passes(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             result = self.check(self.make_repo(Path(directory)))
             self.assertEqual(result.returncode, 0, result.stdout)
+        with self.subTest("inherited, imported and asynchronous TestCase bases"), tempfile.TemporaryDirectory() as directory:
+            root = self.make_repo(Path(directory))
+            (root / "evals/test_demo.py").write_text(INHERITED_TEST, encoding="utf-8")
+            self.assertEqual(self.discovered(root), 2)
+            result = self.check(root)
+            self.assertEqual(result.returncode, 0, result.stdout)
+            self.assertIn("; 2 tests (1 traced, 1 supporting)", result.stdout)
 
     def test_requirement_without_row_fails(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -145,6 +178,19 @@ class TraceCheckTests(unittest.TestCase):
             result = self.check(root)
             self.assertEqual(result.returncode, 1)
             self.assertIn("missing test evals/test_demo.py::DemoTests.test_gone", result.stdout)
+        for label, replacement in (
+            ("no base class", "class DemoTests:"),
+            ("non-TestCase base class", "class Base:\n    pass\n\n\nclass DemoTests(Base):"),
+        ):
+            with self.subTest(label), tempfile.TemporaryDirectory() as directory:
+                root = self.make_repo(Path(directory))
+                self.edit(root / "evals/test_demo.py", "class DemoTests(unittest.TestCase):", replacement)
+                self.assertEqual(self.discovered(root), 0)
+                result = self.check(root)
+                self.assertEqual(result.returncode, 1, result.stdout)
+                self.assertIn("REQ-PO-001 references test evals/test_demo.py::DemoTests.test_one that unittest does not run", result.stdout)
+                self.assertIn("supporting-test row names test evals/test_demo.py::DemoTests.test_two that unittest does not run", result.stdout)
+                self.assertIn("; 0 tests (0 traced,", result.stdout)
 
     def test_gap_without_registration_fails(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
