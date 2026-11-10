@@ -6,12 +6,11 @@ from __future__ import annotations
 import argparse
 import re
 import sys
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
 import yaml
-
 
 SCHEMA = "POODO_CONTINUATION/3.0"
 LEGACY_SCHEMAS = {"POODA_CONTINUATION/2.1"}
@@ -152,7 +151,7 @@ def _timestamp(value: Any) -> bool:
     if value[-1] != "Z" and (int(value[-5:-3]) > 23 or int(value[-2:]) > 59):
         return False
     try:
-        datetime.fromisoformat(value.replace("Z", "+00:00"))
+        date.fromisoformat(value[:10])
     except ValueError:
         return False
     return True

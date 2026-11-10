@@ -7,7 +7,6 @@ from pathlib import Path
 
 import yaml
 
-
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = (
     "SKILL.md",
@@ -39,7 +38,7 @@ def frontmatter(text: str) -> dict:
         raise ValueError("SKILL.md has no YAML frontmatter")
     value = yaml.safe_load(match.group(1))
     if not isinstance(value, dict):
-        raise ValueError("SKILL.md frontmatter is not a mapping")
+        raise TypeError("SKILL.md frontmatter is not a mapping")
     return value
 
 
@@ -58,7 +57,7 @@ def main() -> int:
             metadata = meta.get("metadata")
             if not isinstance(metadata, dict) or str(metadata.get("version")) != "3.1":
                 errors.append("frontmatter metadata.version must be 3.1")
-        except (ValueError, yaml.YAMLError) as exc:
+        except (TypeError, ValueError, yaml.YAMLError) as exc:
             errors.append(str(exc))
 
     config_path = ROOT / "agents" / "openai.yaml"

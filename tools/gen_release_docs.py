@@ -12,7 +12,7 @@ import re
 import shutil
 import subprocess
 import sys
-from datetime import datetime, timezone
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -232,8 +232,9 @@ def main(argv: list[str] | None = None) -> int:
     label = f"main-{short}-dirty" if dirty else f"main-{short}"
     marker = f"{short} + uncommitted changes" if dirty else short
     on_commit = f"`{commit}` plus uncommitted changes" if dirty else f"`{commit}`"
-    date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    now = time.gmtime()
+    date = time.strftime("%Y-%m-%d", now)
+    stamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", now)
     tags = git("tag", "--list").splitlines()
     describe = subprocess.run(["git", "describe", "--tags", "--always"], cwd=ROOT, check=False, capture_output=True, text=True).stdout.strip()
     skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
@@ -270,10 +271,10 @@ def main(argv: list[str] | None = None) -> int:
         "## 1. Summary",
         "",
         f"- Conclusion: {conclusion} on " + ", ".join(f"Python {entry['python']}" for entry in matrix) + ".",
-        "- Remaining deficiencies: no behavioral trial has been recorded, so behavioral requirements REQ-PO-001 to REQ-PO-021 "
-        "have no test result. Untested requirement gaps are listed in the verification matrix.",
-        "- Test-environment impact: local run, not the GitHub Actions runner; the operating system differs from CI "
-        "(`ubuntu-latest`). Python versions match the CI matrix.",
+        ("- Remaining deficiencies: no behavioral trial has been recorded, so behavioral requirements REQ-PO-001 to REQ-PO-021 "
+        "have no test result. Untested requirement gaps are listed in the verification matrix."),
+        ("- Test-environment impact: local run, not the GitHub Actions runner; the operating system differs from CI "
+        "(`ubuntu-latest`). Python versions match the CI matrix."),
         "",
         "## 2. Test log",
         "",
@@ -336,8 +337,8 @@ def main(argv: list[str] | None = None) -> int:
         "",
         "## 6. Rationale for decisions",
         "",
-        "The behavioral requirements are accepted with no result because the repository has no automated agent runner and no recorded trial. "
-        "They are reported as untested, not as passed.",
+        ("The behavioral requirements are accepted with no result because the repository has no automated agent runner and no recorded trial. "
+        "They are reported as untested, not as passed."),
         "",
         "## Change history",
         "",
@@ -363,14 +364,14 @@ def main(argv: list[str] | None = None) -> int:
         "",
         "## 2. Contents",
         "",
-        "The deliverable is the repository tree at the commit: the skill entry point `SKILL.md`, the `references/` library, "
+        ("The deliverable is the repository tree at the commit: the skill entry point `SKILL.md`, the `references/` library, "
         "`agents/openai.yaml`, the Mega Observe charter in `assets/`, the two validators in `scripts/`, the evaluation material "
-        "in `evals/`, synthetic `examples/`, and `docs/`. No package or binary artifact is published.",
+        "in `evals/`, synthetic `examples/`, and `docs/`. No package or binary artifact is published."),
         "",
         "## 3. Build and install",
         "",
-        "There is no build step. Install by cloning the repository into the host's skill directory; see "
-        "[Getting started](../guides/tutorials/getting-started.md). Run the checks with:",
+        ("There is no build step. Install by cloning the repository into the host's skill directory; see "
+        "[Getting started](../guides/tutorials/getting-started.md). Run the checks with:"),
         "",
         "```sh",
         "python -m pip install -r requirements-dev.txt",
