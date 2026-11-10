@@ -161,6 +161,32 @@ class TraceCheckTests(unittest.TestCase):
             result = self.check(root)
             self.assertEqual(result.returncode, 0, result.stdout)
             self.assertIn("; 2 tests (1 traced, 1 supporting)", result.stdout)
+        for imports, base in (
+            ("from unittest.case import TestCase", "TestCase"),
+            ("from unittest.case import TestCase as T", "T"),
+            ("import unittest.case", "unittest.case.TestCase"),
+            ("import unittest.case as uc", "uc.TestCase"),
+            ("from unittest import case", "case.TestCase"),
+            ("from unittest import case as c", "c.TestCase"),
+            ("from unittest import TestCase as T", "T"),
+            ("import unittest as ut", "ut.TestCase"),
+            ("from unittest import *", "TestCase"),
+            ("from unittest.case import *", "TestCase"),
+            ("from unittest import IsolatedAsyncioTestCase", "IsolatedAsyncioTestCase"),
+            ("import unittest", "unittest.IsolatedAsyncioTestCase"),
+            ("from unittest.async_case import IsolatedAsyncioTestCase as A", "A"),
+            ("import unittest.async_case", "unittest.async_case.IsolatedAsyncioTestCase"),
+            ("from unittest import async_case", "async_case.IsolatedAsyncioTestCase"),
+            ("try:\n    from unittest.case import TestCase\nexcept ImportError:\n    raise", "TestCase"),
+        ):
+            with self.subTest(imports), tempfile.TemporaryDirectory() as directory:
+                root = self.make_repo(Path(directory))
+                self.edit(root / "evals/test_demo.py", "import unittest\n", imports + "\n")
+                self.edit(root / "evals/test_demo.py", "class DemoTests(unittest.TestCase):", f"class DemoTests({base}):")
+                self.assertEqual(self.discovered(root), 2)
+                result = self.check(root)
+                self.assertEqual(result.returncode, 0, result.stdout)
+                self.assertIn("; 2 tests (1 traced, 1 supporting)", result.stdout)
 
     def test_requirement_without_row_fails(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -181,6 +207,8 @@ class TraceCheckTests(unittest.TestCase):
         for label, replacement in (
             ("no base class", "class DemoTests:"),
             ("non-TestCase base class", "class Base:\n    pass\n\n\nclass DemoTests(Base):"),
+            ("same-named class outside unittest", "class TestCase:\n    pass\n\n\nclass DemoTests(TestCase):"),
+            ("unittest attribute that is not TestCase", "class DemoTests(unittest.TestResult):"),
         ):
             with self.subTest(label), tempfile.TemporaryDirectory() as directory:
                 root = self.make_repo(Path(directory))

@@ -83,26 +83,65 @@ def parse_requirements(text: str) -> tuple[dict[str, dict[str, str]], list[str]]
     return requirements, errors
 
 
-TESTCASE_BASES = {"TestCase", "IsolatedAsyncioTestCase"}
+TESTCASE_CLASSES = {
+    "unittest.TestCase",
+    "unittest.IsolatedAsyncioTestCase",
+    "unittest.case.TestCase",
+    "unittest.async_case.IsolatedAsyncioTestCase",
+}
+STAR_EXPORTS = {
+    "unittest": ("TestCase", "IsolatedAsyncioTestCase"),
+    "unittest.case": ("TestCase",),
+    "unittest.async_case": ("IsolatedAsyncioTestCase",),
+}
 
 
-def testcase_aliases(tree: ast.Module) -> tuple[set[str], set[str]]:
-    modules: set[str] = set()
-    names: set[str] = set()
-    for node in tree.body:
+def module_statements(body: list[ast.stmt]) -> list[ast.stmt]:
+    result: list[ast.stmt] = []
+    for node in body:
+        result.append(node)
+        if isinstance(node, ast.If):
+            result += module_statements(node.body) + module_statements(node.orelse)
+        elif isinstance(node, ast.Try):
+            nested = node.body + node.orelse + node.finalbody
+            for handler in node.handlers:
+                nested += handler.body
+            result += module_statements(nested)
+    return result
+
+
+def import_bindings(tree: ast.Module) -> dict[str, str]:
+    bindings: dict[str, str] = {}
+    for node in module_statements(tree.body):
         if isinstance(node, ast.Import):
             for alias in node.names:
-                if alias.name == "unittest":
-                    modules.add(alias.asname or alias.name)
-        elif isinstance(node, ast.ImportFrom) and node.module == "unittest":
+                if alias.asname:
+                    bindings[alias.asname] = alias.name
+                else:
+                    top = alias.name.split(".", 1)[0]
+                    bindings[top] = top
+        elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
             for alias in node.names:
-                if alias.name in TESTCASE_BASES:
-                    names.add(alias.asname or alias.name)
-    return modules, names
+                if alias.name == "*":
+                    for name in STAR_EXPORTS.get(node.module, ()):
+                        bindings[name] = f"{node.module}.{name}"
+                else:
+                    bindings[alias.asname or alias.name] = f"{node.module}.{alias.name}"
+    return bindings
+
+
+def qualified_name(node: ast.expr, bindings: dict[str, str]) -> str | None:
+    parts: list[str] = []
+    while isinstance(node, ast.Attribute):
+        parts.append(node.attr)
+        node = node.value
+    if not isinstance(node, ast.Name) or node.id not in bindings:
+        return None
+    return ".".join([bindings[node.id], *reversed(parts)])
 
 
 def module_test_methods(tree: ast.Module) -> tuple[set[str], set[str]]:
-    modules, names = testcase_aliases(tree)
+    bindings = import_bindings(tree)
     classes = {node.name: node for node in tree.body if isinstance(node, ast.ClassDef)}
 
     def own(node: ast.ClassDef) -> set[str]:
@@ -116,14 +155,13 @@ def module_test_methods(tree: ast.Module) -> tuple[set[str], set[str]]:
         is_case = False
         found = own(node)
         for base in node.bases:
-            if isinstance(base, ast.Name) and base.id in names:
+            if isinstance(base, ast.Name) and base.id in classes:
+                if base.id not in seen and base.id != name:
+                    base_case, base_methods = resolve(base.id, seen | {name})
+                    is_case = is_case or base_case
+                    found |= base_methods
+            elif qualified_name(base, bindings) in TESTCASE_CLASSES:
                 is_case = True
-            elif isinstance(base, ast.Attribute) and isinstance(base.value, ast.Name) and base.value.id in modules and base.attr in TESTCASE_BASES:
-                is_case = True
-            elif isinstance(base, ast.Name) and base.id in classes and base.id not in seen and base.id != name:
-                base_case, base_methods = resolve(base.id, seen | {name})
-                is_case = is_case or base_case
-                found |= base_methods
         return is_case, found
 
     discovered: set[str] = set()
