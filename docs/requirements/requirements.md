@@ -504,6 +504,26 @@ The Python tooling shall run on Python 3.10 and 3.14 with only the standard libr
 
 Performance, timing and resource limits: none are specified. The only bound is the capsule size ceiling in REQ-PO-034. No performance figure is claimed.
 
+### REQ-PO-045 — Trace check counts only tests unittest runs
+
+`tools/check_trace.py` shall count a test method as verification evidence only when unittest discovers and runs it, recognising every import form of `unittest.TestCase` and `unittest.IsolatedAsyncioTestCase` (module, submodule, alias and star imports, and inherited or mixed-in bases), reporting any matrix or supporting-test reference to a method unittest does not run.
+
+- Rationale: A class that loses its `TestCase` base stops running its assertions while its requirement stays marked covered (2026-11-09 backfill review finding).
+- Derivation: `tools/check_trace.py`, `tools/test_check_trace.py`
+- Allocated to: SDD §4 (docs tooling)
+- Verification: T
+- Status: Baselined
+
+### REQ-PO-046 — Release record baseline and result
+
+`tools/gen_release_docs.py` shall mark a record generated from a tree with modified or untracked files as dirty instead of baselining it at HEAD, refuse a dirty tree unless `--allow-dirty` is given, and report all passed only when every suite ran at least one test with no skipped, failed or errored outcome and the trace gate passed.
+
+- Rationale: A record attributed to a commit that does not contain its bytes, or that says all passed over skips, cannot be reproduced or trusted (2026-11-09 backfill review finding).
+- Derivation: `tools/gen_release_docs.py`, `tools/test_gen_release_docs.py`
+- Allocated to: SDD §4 (docs tooling)
+- Verification: T
+- Status: Baselined
+
 ## 8. Not applicable categories and open items
 
 - Safety requirements: N/A. Not safety-critical ([SMP §1](../plan/software-management-plan.md#1-software-classification-self-assessed)); no hazard analysis exists.
@@ -526,3 +546,4 @@ Automated tests and CI demonstrations qualify the tool requirements. A recorded,
 |---|---|---|---|---|
 | 1.0 | 2026-10-30 | squashed into `36bfe78` | REQ-PO-001 to REQ-PO-021 from SKILL.md 3.1 | PR #12 |
 | 2.0 | 2026-11-08 | `b969150` | Family metadata and disclaimer; record fields (derivation, allocation, status); one "shall" per requirement (wording only, meaning unchanged, in 003, 006, 008, 010, 012); tool requirements REQ-PO-022 to REQ-PO-044 read from the validators; open items; N/A categories. The 1.0 baseline commit `01e6c60` is not in this repository's history | this PR |
+| 2.1 | 2026-11-10 | review backfill | Added REQ-PO-045 (trace check counts only tests unittest runs) and REQ-PO-046 (release record baseline and result) | PR #23 |
