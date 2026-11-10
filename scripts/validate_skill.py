@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """Validate POODO package structure; never claims behavioral correctness."""
 
-from pathlib import Path
 import re
 import sys
+from pathlib import Path
 
 import yaml
-
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = (
@@ -25,6 +24,7 @@ REQUIRED = (
     "evals/protocol.md",
     "evals/rubric.md",
     "evals/test_check_capsule.py",
+    "evals/test_validate_skill.py",
     "evals/fixtures/valid-capsule.yaml",
     "evals/fixtures/invalid-resurrection.yaml",
     "evals/fixtures/invalid-truncated-evidence.yaml",
@@ -38,7 +38,7 @@ def frontmatter(text: str) -> dict:
         raise ValueError("SKILL.md has no YAML frontmatter")
     value = yaml.safe_load(match.group(1))
     if not isinstance(value, dict):
-        raise ValueError("SKILL.md frontmatter is not a mapping")
+        raise TypeError("SKILL.md frontmatter is not a mapping")
     return value
 
 
@@ -51,35 +51,41 @@ def main() -> int:
     skill_path = ROOT / "SKILL.md"
     if skill_path.is_file():
         try:
-            meta = frontmatter(skill_path.read_text())
+            meta = frontmatter(skill_path.read_text(encoding="utf-8"))
             if meta.get("name") != "poodo":
                 errors.append("frontmatter name must be poodo")
-            if str(meta.get("metadata", {}).get("version")) != "3.1":
+            metadata = meta.get("metadata")
+            if not isinstance(metadata, dict) or str(metadata.get("version")) != "3.1":
                 errors.append("frontmatter metadata.version must be 3.1")
-        except (ValueError, yaml.YAMLError) as exc:
+        except (TypeError, ValueError, yaml.YAMLError) as exc:
             errors.append(str(exc))
 
     config_path = ROOT / "agents" / "openai.yaml"
     if config_path.is_file():
         try:
-            config = yaml.safe_load(config_path.read_text())
+            config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
             interface = config.get("interface", {})
             policy = config.get("policy", {})
             short = interface.get("short_description", "")
-            if not 25 <= len(short) <= 64:
+            if not isinstance(short, str) or not 25 <= len(short) <= 64:
                 errors.append("openai.yaml short_description must be 25-64 characters")
-            if "$poodo" not in interface.get("default_prompt", ""):
+            prompt = interface.get("default_prompt", "")
+            if not isinstance(prompt, str) or "$poodo" not in prompt:
                 errors.append("openai.yaml default_prompt must mention $poodo")
             if policy.get("allow_implicit_invocation") is not False:
                 errors.append("POODO must remain explicit-only")
-        except (AttributeError, yaml.YAMLError) as exc:
+        except (AttributeError, ValueError, yaml.YAMLError) as exc:
             errors.append(f"invalid agents/openai.yaml: {exc}")
 
     markdown = [ROOT / "SKILL.md", *sorted((ROOT / "references").glob("*.md"))]
     for path in markdown:
         if not path.is_file():
             continue
-        text = path.read_text()
+        try:
+            text = path.read_text(encoding="utf-8")
+        except ValueError as exc:
+            errors.append(f"unreadable {path.relative_to(ROOT)}: {exc}")
+            continue
         for target in re.findall(r"\[[^]]+\]\(([^)]+\.md)\)", text):
             if not (path.parent / target).resolve().is_file():
                 errors.append(f"broken reference in {path.relative_to(ROOT)}: {target}")
@@ -88,9 +94,12 @@ def main() -> int:
 
     continuity = ROOT / "references" / "continuity-and-ledger.md"
     if continuity.is_file():
-        body = continuity.read_text()
+        try:
+            body = continuity.read_text(encoding="utf-8")
+        except ValueError:
+            body = ""
         for literal in ("POODO_CONTINUATION/3.0", "POODO_CONTINUATION_V3_0", "END_POODO_CONTINUATION_V3_0"):
-            if literal not in body:
+            if not re.search(rf"(?<![\w/]){re.escape(literal)}(?![\w/])", body):
                 errors.append(f"continuation schema missing {literal}")
 
     for relative in ("scripts/validate_skill.py", "scripts/check_capsule.py"):

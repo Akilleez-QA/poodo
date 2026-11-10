@@ -37,7 +37,7 @@ Schema `POODO_CONTINUATION/3.0`. The checker also accepts the legacy schema `POO
 | `revision` | integer | yes | ≥ 1; booleans rejected | Position in the lineage |
 | `parent_capsule` | string or null | yes | Null when revision is 1; a `PC-` ID when revision > 1 | Previous capsule |
 | `generated_at` | timestamp | yes | RFC 3339 with real date and offset ≤ 23:59, or timezone-aware YAML timestamp | When the capsule was written |
-| `objective` | any | yes | Non-empty after `str()` and strip | What the work is for |
+| `objective` | any | yes | Not null, not an empty list or mapping, and non-empty after `str()` and strip | What the work is for |
 | `acceptance` | list of records | yes | Each record has a unique valid `id` | Acceptance criteria |
 | `authority` | mapping | yes | Must be a mapping | What the user allowed and prohibited |
 | `constraints` | string, list or mapping | yes | Non-empty | Binding constraints |
@@ -55,13 +55,13 @@ Schema `POODO_CONTINUATION/3.0`. The checker also accepts the legacy schema `POO
 | `rehydration` | mapping | yes | Must be a mapping | Restore status and losses |
 | `delivery_state` | string | yes | One of the delivery states in §4 | How far delivery got |
 | `outcome_state` | string | yes | One of the outcome states in §4 | What is known about the outcome |
-| `highest_justified_claim` | any | yes | Non-empty | Strongest claim the evidence supports |
-| `required_runtime_observation` | any | yes | Non-empty | Remaining intended-use check, or `none` with evidence IDs |
-| `who_controls_next_test` | any | yes | Non-empty | Agent, user, named party or none |
-| `next_step` | any | yes | Non-empty | The next action |
+| `highest_justified_claim` | any | yes | Non-empty (null, blank, `[]` and `{}` rejected) | Strongest claim the evidence supports |
+| `required_runtime_observation` | any | yes | Non-empty (null, blank, `[]` and `{}` rejected) | Remaining intended-use check, or `none` with evidence IDs |
+| `who_controls_next_test` | any | yes | Non-empty (null, blank, `[]` and `{}` rejected) | Agent, user, named party or none |
+| `next_step` | any | yes | Non-empty (null, blank, `[]` and `{}` rejected) | The next action |
 | `capsule_overflow` | string | no | Non-blank to waive the size ceiling | What could not fit and where it is |
 
-Any other root field is rejected. Record IDs in collections match `^[A-Z]{1,4}-[A-Za-z0-9][A-Za-z0-9._-]*$` and are unique across all ten collections.
+Any other root field is rejected. Record IDs in collections match `^[A-Z]{1,4}-[A-Za-z0-9][A-Za-z0-9._-]*$` and are unique across all ten collections. Collections are read in a fixed order (`acceptance`, `claims`, `evidence_bundles`, `alternatives`, `orientations`, `decisions`, `predictions`, `outcomes`, `contradictions`, `artifacts`), so a duplicate is always reported against the later record whatever the hash seed.
 
 ## 3. Capsule record fields checked
 
@@ -118,7 +118,7 @@ None of these files is validated by code except `SKILL.md` front matter and `age
 | Limit | Value | Enforced in | Test |
 |---|---|---|---|
 | Capsule size ceiling | 1,800 approximate tokens by default; tokens = (characters + 3) // 4 | `check_capsule.py` `validate()` | `evals/test_check_capsule.py` oversize tests |
-| Short description length | 25–64 characters | `validate_skill.py` | none (gap UG-30) |
+| Short description length | 25–64 characters | `validate_skill.py` | `evals/test_validate_skill.py` `test_ug_30_short_description_out_of_range` |
 | Minimum trials per behavioral case | 3 | `evals/manifest.yaml` (read by people) | not enforced by code |
 
 ## Change history
@@ -126,3 +126,4 @@ None of these files is validated by code except `SKILL.md` front matter and `age
 | Version | Date | Commit | Change | Reviewed in |
 |---|---|---|---|---|
 | 1.0 | 2026-11-08 | `b969150` | Initial baseline | this PR |
+| 1.1 | 2026-11-10 | findings sweep `07d033a`..`89c25a9` | Empty now includes null, `[]` and `{}` for the required string fields; duplicate IDs reported in a fixed collection order; short-description limit now tested | this PR |

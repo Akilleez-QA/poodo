@@ -24,3 +24,32 @@ jobs:
       - run: python scripts/check_capsule.py evals/fixtures/valid-capsule.yaml
       - run: python tools/check_trace.py
       - run: python -m unittest discover -s tools -p 'test_*.py' -v
+
+  ruff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+      - run: uvx ruff@0.17.0 check .
+
+  gitleaks:
+    runs-on: ubuntu-latest
+    env:
+      GITLEAKS_VERSION: 8.28.0
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Install gitleaks
+        shell: bash
+        run: |
+          base="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}"
+          archive="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -fsSL -o "$RUNNER_TEMP/$archive" "$base/$archive"
+          curl -fsSL -o "$RUNNER_TEMP/checksums.txt" "$base/gitleaks_${GITLEAKS_VERSION}_checksums.txt"
+          (cd "$RUNNER_TEMP" && grep " ${archive}\$" checksums.txt | sha256sum -c -)
+          tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP" gitleaks
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - name: gitleaks
+        shell: bash
+        run: gitleaks git --redact --no-banner --exit-code 1 --config .gitleaks.toml .

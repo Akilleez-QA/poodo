@@ -152,7 +152,7 @@ def discover_commands(commands: set[str]) -> list[tuple[str, str, str]]:
             elif not word.startswith("-"):
                 positional.append(word)
             index += 1
-        for key, value in zip(("start", "pattern", "top"), positional):
+        for key, value in zip(("start", "pattern", "top"), positional, strict=False):
             options[key] = value
         result.append((options["start"], options["pattern"], options["top"]))
     return result
@@ -189,8 +189,8 @@ def collect_tests(root: Path, commands: set[str]) -> tuple[dict[str, set[str]], 
                 errors.append(f"DISCOVER: {where} failed: {detail}")
                 continue
             data = json.loads(output.read_text(encoding="utf-8"))
-        messages = data["errors"] + [""] * len(data["failures"])
-        for module, message in zip(data["failures"], messages):
+        messages = [*data["errors"], *([""] * len(data["failures"]))]
+        for module, message in zip(data["failures"], messages, strict=False):
             lines = [line.strip() for line in message.splitlines() if line.strip()]
             detail = f": {lines[-1]}" if lines else ""
             errors.append(f"DISCOVER: {where} could not import module {module}{detail}")

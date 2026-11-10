@@ -31,7 +31,9 @@ A baseline is a full commit SHA. Branch names and checkout paths are mutable and
 | Mega Observe charter | POODO_MEGA_OBSERVE_CHARTER/1 | [mega-observe-charter.yaml](../../assets/mega-observe-charter.yaml) |
 | Validator dependency | PyYAML==6.0.3 | [requirements-dev.txt](../../requirements-dev.txt) |
 | CI Python versions | 3.10 and 3.14 | [checks.yml](../../.github/workflows/checks.yml) |
-| Workflow actions | `actions/checkout@v7`, `actions/setup-python@v7` | checks.yml; major-version tags, not commit SHAs |
+| Workflow actions | `actions/checkout@v7`, `actions/setup-python@v7`, `astral-sh/setup-uv@v7` | checks.yml; major-version tags, not commit SHAs |
+| CI static analysis | ruff 0.17.0 (`uvx ruff@0.17.0`), default rules, no repository config | checks.yml |
+| CI secret scan | gitleaks 8.28.0 release archive, checked against the release's `checksums.txt` | checks.yml `GITLEAKS_VERSION` |
 | Control documents | Each header names its baseline commit | [docs/README.md](../README.md) |
 
 The method version, capsule schema and manifests are separate version axes. Method 3.1 kept capsule schema 3.0. A method version change must update `validate_skill.py` in the same PR.
@@ -106,3 +108,4 @@ Update this plan in the same PR as any change to versions, pins, CI, release ste
 |---|---|---|---|---|
 | 1.0 | 2026-10-30 | squashed into `36bfe78` | Version axes, pins, baselines and a future release checklist | PR #13 |
 | 2.0 | 2026-11-08 | `b969150` | Family format; corrected stale action pins (v4/v5 → v7) and CHANGELOG version form; replaced unreachable baseline commits; added byte table, change control facts, generated outputs and audit steps | this PR |
+| 2.1 | 2026-11-10 | findings sweep `07d033a`..`89c25a9` | Pins for the ruff and gitleaks CI jobs and `astral-sh/setup-uv@v7` | this PR |

@@ -38,6 +38,10 @@ python tools/check_trace.py
 python -m unittest discover -s tools -p 'test_*.py' -v
 ```
 
+CI also runs `uvx ruff@0.17.0 check .` and a gitleaks 8.28.0 scan of the full git
+history (`gitleaks git --redact --no-banner --exit-code 1 --config .gitleaks.toml .`)
+as separate gates.
+
 Report the Python version, commands run, results, and untested outcomes. These
 checks validate package and capsule structure, checker regressions and the
 documentation trace; they do not run a behavioral evaluation. A behavior change

@@ -19,6 +19,8 @@ List checks run at the head commit, their outcomes, and remaining limitations. F
 - [ ] `python scripts/check_capsule.py evals/fixtures/valid-capsule.yaml`
 - [ ] `python tools/check_trace.py`
 - [ ] `python -m unittest discover -s tools -p 'test_*.py' -v`
+- [ ] `uvx ruff@0.17.0 check .` (CI job)
+- [ ] `gitleaks git --redact --no-banner --exit-code 1 --config .gitleaks.toml .` (CI job)
 
 ## Peer review record
 

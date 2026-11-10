@@ -21,6 +21,8 @@ python tools/check_trace.py
 python -m unittest discover -s tools -p 'test_*.py' -v
 ```
 
+CI also runs two repository-wide gates in their own jobs: `uvx ruff@0.17.0 check .` (ruff default rules, no repository config, so keep code compatible with Python 3.10 when applying its suggestions) and a gitleaks 8.28.0 scan of the full git history with `.gitleaks.toml`.
+
 These checks validate package and capsule structure, checker regressions and the documentation trace. They do not run a behavioral evaluation. The [test plan](docs/verification/test-plan.md) explains each one.
 
 Preserve explicit invocation and the existing method and optional-mode boundary unless proposing a clearly identified method revision. Explain effects on evidence separation, authority, research, divergence, contradiction handling, and continuity. Keep client-specific capabilities conditional on actual availability.

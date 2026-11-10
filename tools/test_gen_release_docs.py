@@ -178,6 +178,7 @@ class GenReleaseDocsTests(unittest.TestCase):
         skill = self.root / "SKILL.md"
         skill.write_text(skill.read_text(encoding="utf-8") + "\nlocal edit\n", encoding="utf-8")
         code, texts = self.generate("--allow-dirty")
+        self.assertEqual(code, 0)
         self.assertEqual(len(texts), 2)
         for text in texts:
             self.assertNotIn("Baselined", text)

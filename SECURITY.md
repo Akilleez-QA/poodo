@@ -20,7 +20,7 @@ No release has been tagged (`git tag --list` is empty). Only the current `main` 
 - The validators read local files only. They make no network connections, write no files and start no subprocesses. YAML is parsed with `yaml.safe_load` or a `SafeLoader` subclass, and the capsule checker refuses duplicate and non-string keys.
 - The skill grants no authority beyond the user's instructions. Host permissions and available tools decide what an agent can do; the skill's authority rule is an instruction to the model, not an enforced control.
 - Mega Observe can spend large amounts of model and search budget. The bundled charter is a plan, not a billing cap.
-- Secret scanning (`.gitleaks.toml`, default rules) and static analysis are run by hand and recorded in the [assurance record](docs/assurance/assurance-record.md); they are not CI gates.
+- Secret scanning and static analysis are CI gates: gitleaks 8.28.0 scans the full git history with `.gitleaks.toml` (default rules), and ruff 0.17.0 checks the Python code with its default rules. See [the CI workflow](.github/workflows/checks.yml) and the [assurance record](docs/assurance/assurance-record.md).
 
 A structural check does not establish safe behavior by an agent or its host. See [Limitations and safety-relevant use](docs/guides/explanation/limitations.md).
 

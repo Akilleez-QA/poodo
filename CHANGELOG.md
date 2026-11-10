@@ -11,6 +11,8 @@ Tooling and evaluation-rule fixes.
 - Requirements REQ-PO-022 to REQ-PO-044 for the validators, each traced to a test or listed as an untested gap.
 - `tools/check_trace.py`, run in CI: fails on an untraced requirement, a missing or untraced test, an unregistered gap, or a dead link. `tools/gen_release_docs.py` generates the version description and test report.
 - Problem-report and change-request issue templates (the bug template became the problem report); the pull request template now records the peer review.
+- `evals/test_validate_skill.py`: failure-path tests for the package validator, run against a temporary copy of the package. Capsule-checker tests for duplicate keys, the root field set, lineage, record identity and resolution, invalidated dependencies and head kind, per-record fields, `--hard-token-ceiling`, out-of-set strings, `outcomes[].depends_on` and exit 2 on unreadable or non-UTF-8 files. Untested gaps UG-22 to UG-37 are closed.
+- CI gates: ruff 0.17.0 (default rules) and a gitleaks 8.28.0 scan of the full git history, with the gitleaks download checked against its published SHA-256.
 
 ### Changed
 
@@ -22,6 +24,8 @@ Tooling and evaluation-rule fixes.
 ### Fixed
 
 - Capsule checker: an oversize capsule now passes the size check only when it declares a non-empty `capsule_overflow`, matching the method's soft ceiling. Add regression tests.
+- Capsule checker: `objective`, `next_step`, the three terminal-claim fields and claim text no longer pass when null, `[]` or `{}`. A duplicate record ID is reported against the same record whatever the hash seed.
+- Package validator: removing the opening `POODO_CONTINUATION_V3_0` marker is now reported (it was matched inside the `END_` marker). A non-mapping `metadata`, a non-string `default_prompt` or `short_description`, and a non-UTF-8 file are reported instead of raising a traceback.
 
 No change to the method text or skill version.
 

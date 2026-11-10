@@ -263,7 +263,7 @@ The package validator shall exit 1 and name each missing file when any file in i
 - Rationale: A partial copy breaks the skill's relative links and the CI gates.
 - Derivation: `scripts/validate_skill.py` (`REQUIRED`, `main`)
 - Allocated to: SDD §4 (package validator)
-- Verification: T (no test yet; gap UG-28; the CI run only shows the real package passes)
+- Verification: T
 - Status: Baselined
 
 ### REQ-PO-023 — Skill front matter
@@ -273,7 +273,7 @@ The package validator shall exit 1 unless SKILL.md starts with a YAML front-matt
 - Rationale: Hosts discover the skill by its front matter; the version ties the package to its CHANGELOG entry.
 - Derivation: `scripts/validate_skill.py` (`frontmatter`, `main`)
 - Allocated to: SDD §4 (package validator)
-- Verification: T (no test yet; gap UG-29; the CI run only shows the real package passes)
+- Verification: T
 - Status: Baselined
 
 ### REQ-PO-024 — Explicit-only host metadata
@@ -283,27 +283,27 @@ The package validator shall exit 1 unless `agents/openai.yaml` sets `policy.allo
 - Rationale: Implements the metadata half of REQ-PO-001.
 - Derivation: `scripts/validate_skill.py` (`main`); `agents/openai.yaml`
 - Allocated to: SDD §4 (package validator)
-- Verification: T (no test yet; gap UG-30; the CI run only shows the real package passes)
+- Verification: T
 - Status: Baselined
 
 ### REQ-PO-025 — Reference links and placeholders
 
-The package validator shall exit 1 when a relative `.md` link in SKILL.md or `references/*.md` does not resolve, or when those files contain `TODO`, `<TODO>` or `<TBD>`.
+The package validator shall exit 1 when a relative `.md` link in SKILL.md or `references/*.md` does not resolve, when those files contain `TODO`, `<TODO>` or `<TBD>`, or when one of them is not valid UTF-8.
 
 - Rationale: A broken routing link silently removes guidance the agent is told to read.
 - Derivation: `scripts/validate_skill.py` (`main`)
 - Allocated to: SDD §4 (package validator)
-- Verification: T (no test yet; gap UG-31; the CI run only shows the real package passes)
+- Verification: T
 - Status: Baselined
 
 ### REQ-PO-026 — Continuation schema markers
 
-The package validator shall exit 1 unless `references/continuity-and-ledger.md` contains the literals `POODO_CONTINUATION/3.0`, `POODO_CONTINUATION_V3_0` and `END_POODO_CONTINUATION_V3_0`.
+The package validator shall exit 1 unless `references/continuity-and-ledger.md` contains each of the literals `POODO_CONTINUATION/3.0`, `POODO_CONTINUATION_V3_0` and `END_POODO_CONTINUATION_V3_0` as a standalone token, so that one literal appearing inside another does not count.
 
 - Rationale: Keeps the documented schema and the checker's `SCHEMA` constant on the same version.
 - Derivation: `scripts/validate_skill.py` (`main`); `references/continuity-and-ledger.md`
 - Allocated to: SDD §4 (package validator)
-- Verification: T (no test yet; gap UG-32; the CI run only shows the real package passes)
+- Verification: T
 - Status: Baselined
 
 ### REQ-PO-027 — Executable scripts
@@ -313,7 +313,7 @@ The package validator shall exit 1 when `scripts/validate_skill.py` or `scripts/
 - Rationale: The scripts carry a shebang and are documented as directly runnable.
 - Derivation: `scripts/validate_skill.py` (`main`)
 - Allocated to: SDD §4 (package validator)
-- Verification: T (no test yet; gap UG-33; the CI run only shows the real package passes)
+- Verification: T
 - Status: Baselined
 
 ### REQ-PO-028 — Pass result and disclaimer
@@ -323,7 +323,7 @@ The package validator shall exit 0 and print "POODO structural checks passed; be
 - Rationale: A pass must not read as a behavioral result.
 - Derivation: `scripts/validate_skill.py` (`main`)
 - Allocated to: SDD §4 (package validator)
-- Verification: D (CI step `python scripts/validate_skill.py` on the real package)
+- Verification: T, D (a test on a copy of the package; CI step `python scripts/validate_skill.py` on the real package)
 - Status: Baselined
 
 ## 5. Functional requirements: capsule checker
@@ -337,7 +337,7 @@ The capsule checker shall exit 0 for a structurally valid capsule, 1 for invalid
 - Rationale: Callers branch on the status without parsing text.
 - Derivation: `scripts/check_capsule.py` (`main`)
 - Allocated to: SDD §4 (capsule checker)
-- Verification: T (exit 0, 1 and 2 on parse errors covered; exit 2 on an unreadable file untested; gap UG-37)
+- Verification: T
 - Status: Baselined
 
 ### REQ-PO-030 — ID reference typing
@@ -347,7 +347,7 @@ The capsule checker shall reject any ID reference field that is not a valid ID s
 - Rationale: Malformed references must fail closed rather than crash or pass.
 - Derivation: `scripts/check_capsule.py` (`_references`, `_reference`, `ID_RE`)
 - Allocated to: SDD §4 (capsule checker)
-- Verification: T (all reference fields covered except `outcomes[].depends_on`; gap UG-36)
+- Verification: T
 - Status: Baselined
 
 ### REQ-PO-031 — Enumerated values
@@ -357,7 +357,7 @@ The capsule checker shall reject a value outside its allowed set for `schema`, `
 - Rationale: Unhashable YAML values previously risked a crash instead of a verdict.
 - Derivation: `scripts/check_capsule.py` (`_enum`, state sets)
 - Allocated to: SDD §4 (capsule checker)
-- Verification: T (list and mapping values covered; out-of-set strings untested; gap UG-35)
+- Verification: T
 - Status: Baselined
 
 ### REQ-PO-032 — Timestamps
@@ -387,7 +387,7 @@ The capsule checker shall reject a capsule whose approximate token count, (chara
 - Rationale: Matches the method's soft ceiling; state may not be dropped silently.
 - Derivation: `scripts/check_capsule.py` (`validate`, `main`)
 - Allocated to: SDD §4 (capsule checker)
-- Verification: T (default ceiling and overflow covered; `--hard-token-ceiling` untested; gap UG-34)
+- Verification: T
 - Status: Baselined
 
 ### REQ-PO-035 — No prediction resurrection
@@ -427,17 +427,17 @@ The capsule checker shall treat a duplicate mapping key at any depth as a load e
 - Rationale: YAML otherwise keeps the last value and hides the conflict.
 - Derivation: `scripts/check_capsule.py` (`_construct_mapping`)
 - Allocated to: SDD §4 (capsule checker)
-- Verification: T (no test yet; gap UG-22)
+- Verification: T
 - Status: Baselined
 
 ### REQ-PO-039 — Root field set
 
-The capsule checker shall reject a capsule that is not a mapping, lacks any required root field, contains a field outside the required and optional sets, or has an empty `objective`, `next_step`, `constraints`, `user_directives` or terminal-claim field, or a non-mapping `authority` or `rehydration`.
+The capsule checker shall reject a capsule that is not a mapping, lacks any required root field, contains a field outside the required and optional sets, or has an empty (null, blank, empty list or empty mapping) `objective`, `next_step`, `constraints`, `user_directives` or terminal-claim field, or a non-mapping `authority` or `rehydration`.
 
 - Rationale: The capsule must carry every decision-relevant slot.
 - Derivation: `scripts/check_capsule.py` (`REQUIRED`, `OPTIONAL`, `validate`)
 - Allocated to: SDD §4 (capsule checker)
-- Verification: T (no test yet; gap UG-23)
+- Verification: T
 - Status: Baselined
 
 ### REQ-PO-040 — Capsule identity and lineage
@@ -447,17 +447,17 @@ The capsule checker shall require `capsule_id` to match `PC-<id>`, `revision` to
 - Rationale: Lineage lets a reader detect forks and gaps between capsules.
 - Derivation: `scripts/check_capsule.py` (`CAPSULE_RE`, `validate`)
 - Allocated to: SDD §4 (capsule checker)
-- Verification: T (no test yet; gap UG-24)
+- Verification: T
 - Status: Baselined
 
 ### REQ-PO-041 — Record identity and resolution
 
-The capsule checker shall require a unique, valid `id` on every collection record and resolve every referenced ID to a record of the expected kind.
+The capsule checker shall require a unique, valid `id` on every collection record, reporting a duplicate against the later record in a fixed collection order, and resolve every referenced ID to a record of the expected kind.
 
 - Rationale: Dangling references hide lost state.
 - Derivation: `scripts/check_capsule.py` (`validate`)
 - Allocated to: SDD §4 (capsule checker)
-- Verification: T (partly covered by the malformed-reference tests; unresolved and duplicate IDs untested; gap UG-25)
+- Verification: T
 - Status: Baselined
 
 ### REQ-PO-042 — Invalidated dependencies and head
@@ -467,17 +467,17 @@ The capsule checker shall reject an active orientation, decision or outcome that
 - Rationale: Work built on retracted state must be reopened (REQ-PO-007).
 - Derivation: `scripts/check_capsule.py` (`validate`)
 - Allocated to: SDD §4 (capsule checker)
-- Verification: T (non-string head covered; dependency rule and head kind untested; gap UG-26)
+- Verification: T
 - Status: Baselined
 
 ### REQ-PO-043 — Per-record required fields
 
-The capsule checker shall require claims to carry non-empty text and the fields `source_type`, `locator`, `observed_at`, `freshness`, `evidence_family`, `rehydration_status` and `limits`; contradictions to carry `target`, `evidence`, `scope`, `effect`, `affected_ids`, `disposition` and `repaired_by`; and a prediction's last `status_history` entry to equal its `status`.
+The capsule checker shall require claims to carry non-empty text (not null, blank, an empty list or an empty mapping) and the fields `source_type`, `locator`, `observed_at`, `freshness`, `evidence_family`, `rehydration_status` and `limits`; contradictions to carry `target`, `evidence`, `scope`, `effect`, `affected_ids`, `disposition` and `repaired_by`; and a prediction's last `status_history` entry to equal its `status`.
 
 - Rationale: Provenance and contradiction state are what make a capsule rehydratable.
 - Derivation: `scripts/check_capsule.py` (`validate`)
 - Allocated to: SDD §4 (capsule checker)
-- Verification: T (no test yet; gap UG-27)
+- Verification: T
 - Status: Baselined
 
 ## 6. Interface requirements
@@ -547,3 +547,4 @@ Automated tests and CI demonstrations qualify the tool requirements. A recorded,
 | 1.0 | 2026-10-30 | squashed into `36bfe78` | REQ-PO-001 to REQ-PO-021 from SKILL.md 3.1 | PR #12 |
 | 2.0 | 2026-11-08 | `b969150` | Family metadata and disclaimer; record fields (derivation, allocation, status); one "shall" per requirement (wording only, meaning unchanged, in 003, 006, 008, 010, 012); tool requirements REQ-PO-022 to REQ-PO-044 read from the validators; open items; N/A categories. The 1.0 baseline commit `01e6c60` is not in this repository's history | this PR |
 | 2.1 | 2026-11-10 | review backfill | Added REQ-PO-045 (trace check counts only tests unittest runs) and REQ-PO-046 (release record baseline and result) | PR #23 |
+| 2.2 | 2026-11-10 | findings sweep `07d033a`..`89c25a9` | Verification lines for REQ-PO-022 to REQ-PO-027, REQ-PO-029 to REQ-PO-031, REQ-PO-034 and REQ-PO-038 to REQ-PO-043 no longer name an untested gap (UG-22 to UG-37 closed by new tests); REQ-PO-028 adds a test. Behaviour now stated: REQ-PO-025 rejects non-UTF-8 reference files; REQ-PO-026 matches each schema literal as a standalone token; REQ-PO-039 and REQ-PO-043 treat null, empty list and empty mapping as empty; REQ-PO-041 reports duplicates in a fixed order | this PR |
