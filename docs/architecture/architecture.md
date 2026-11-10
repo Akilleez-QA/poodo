@@ -90,7 +90,7 @@ flowchart LR
 | Checker regression tests | `evals/test_check_capsule.py`, `evals/fixtures/` | Subprocess tests of the capsule checker | Fixtures → pass/fail | infrastructure (verifies the capsule checker) |
 | Behavioral evaluation material | `evals/manifest.yaml`, `evals/mega-observe.yaml`, `evals/protocol.md`, `evals/rubric.md`, `evals/run-record.template.yaml` | 14 base cases, 8 Mega Observe probes, grading rules, run-record template | Frozen configuration → graded trials (none recorded) | infrastructure (verification material for REQ-PO-001 to REQ-PO-021) |
 | Examples | `examples/` | Synthetic illustrations, not measured runs | — | infrastructure (documentation) |
-| Docs tooling | `tools/` | Trace and link check; generator for the VDD and STR | Docs and test tree → pass/fail; generated reports | infrastructure |
+| Docs tooling | `tools/` | Trace and link check; generator for the VDD and STR | Docs and test tree → pass/fail; generated reports | REQ-PO-045, REQ-PO-046 |
 | CI | `.github/workflows/checks.yml` | Runs every check on Python 3.10 and 3.14 on each push and PR | Commit → check status | infrastructure |
 
 ## 5. Execution concept

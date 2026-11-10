@@ -74,6 +74,8 @@ Behavioral cases are prospective. A listed case is not a passing result. The rep
 | REQ-PO-042 | T | `evals/test_check_capsule.py::CapsuleLinterTests.test_malformed_scalar_references` | Partial | UG-26 | [STR](reports/README.md) |
 | REQ-PO-043 | T | none (positive path via test_valid_capsule only) | None | UG-27 | — |
 | REQ-PO-044 | I, D | `inspect: requirements-dev.txt`; `ci: python -m pip install -r requirements-dev.txt` | Full | — | [STR](reports/README.md) |
+| REQ-PO-045 | T | `tools/test_check_trace.py::TraceCheckTests.test_minimal_repository_passes`; `tools/test_check_trace.py::TraceCheckTests.test_missing_test_reference_fails` | Full | — | Pending: added 2026-11-10, not yet in a recorded STR |
+| REQ-PO-046 | T | `tools/test_gen_release_docs.py::GenReleaseDocsTests.test_clean_tree_is_baselined_at_head`; `tools/test_gen_release_docs.py::GenReleaseDocsTests.test_dirty_tree_report_does_not_claim_head_as_baseline`; `tools/test_gen_release_docs.py::GenReleaseDocsTests.test_dirty_tree_without_flag_is_refused`; `tools/test_gen_release_docs.py::GenReleaseDocsTests.test_failed_trace_gate_does_not_report_all_passed`; `tools/test_gen_release_docs.py::GenReleaseDocsTests.test_skipped_test_does_not_report_all_passed`; `tools/test_gen_release_docs.py::GenReleaseDocsTests.test_suite_result_counts_every_non_pass_outcome`; `tools/test_gen_release_docs.py::GenReleaseDocsTests.test_suite_that_runs_no_tests_does_not_report_all_passed`; `tools/test_gen_release_docs.py::GenReleaseDocsTests.test_untracked_file_counts_as_dirty` | Full | — | Pending: added 2026-11-10, not yet in a recorded STR |
 
 ## Untested requirement gaps
 
@@ -124,23 +126,13 @@ Each gap is a behavior the software or the skill is meant to have that no automa
 | Test | Classification |
 | --- | --- |
 | `tools/test_check_trace.py::TraceCheckTests.test_repository_passes` | Infrastructure: documentation trace check |
-| `tools/test_check_trace.py::TraceCheckTests.test_minimal_repository_passes` | Infrastructure: documentation trace check |
 | `tools/test_check_trace.py::TraceCheckTests.test_requirement_without_row_fails` | Infrastructure: documentation trace check |
-| `tools/test_check_trace.py::TraceCheckTests.test_missing_test_reference_fails` | Infrastructure: documentation trace check |
 | `tools/test_check_trace.py::TraceCheckTests.test_gap_without_registration_fails` | Infrastructure: documentation trace check |
 | `tools/test_check_trace.py::TraceCheckTests.test_full_without_automated_evidence_fails` | Infrastructure: documentation trace check |
 | `tools/test_check_trace.py::TraceCheckTests.test_untraced_test_fails` | Infrastructure: documentation trace check |
 | `tools/test_check_trace.py::TraceCheckTests.test_unallocated_requirement_fails` | Infrastructure: documentation trace check |
 | `tools/test_check_trace.py::TraceCheckTests.test_dead_link_and_anchor_fail` | Infrastructure: documentation trace check |
 | `tools/test_check_trace.py::TraceCheckTests.test_command_not_in_ci_fails` | Infrastructure: documentation trace check |
-| `tools/test_gen_release_docs.py::GenReleaseDocsTests.test_clean_tree_is_baselined_at_head` | Infrastructure: release-record generator (dirty-tree baseline and pass condition; 2026-11-09 backfill review) |
-| `tools/test_gen_release_docs.py::GenReleaseDocsTests.test_dirty_tree_report_does_not_claim_head_as_baseline` | Infrastructure: release-record generator (dirty-tree baseline and pass condition; 2026-11-09 backfill review) |
-| `tools/test_gen_release_docs.py::GenReleaseDocsTests.test_dirty_tree_without_flag_is_refused` | Infrastructure: release-record generator (dirty-tree baseline and pass condition; 2026-11-09 backfill review) |
-| `tools/test_gen_release_docs.py::GenReleaseDocsTests.test_failed_trace_gate_does_not_report_all_passed` | Infrastructure: release-record generator (dirty-tree baseline and pass condition; 2026-11-09 backfill review) |
-| `tools/test_gen_release_docs.py::GenReleaseDocsTests.test_skipped_test_does_not_report_all_passed` | Infrastructure: release-record generator (dirty-tree baseline and pass condition; 2026-11-09 backfill review) |
-| `tools/test_gen_release_docs.py::GenReleaseDocsTests.test_suite_result_counts_every_non_pass_outcome` | Infrastructure: release-record generator (dirty-tree baseline and pass condition; 2026-11-09 backfill review) |
-| `tools/test_gen_release_docs.py::GenReleaseDocsTests.test_suite_that_runs_no_tests_does_not_report_all_passed` | Infrastructure: release-record generator (dirty-tree baseline and pass condition; 2026-11-09 backfill review) |
-| `tools/test_gen_release_docs.py::GenReleaseDocsTests.test_untracked_file_counts_as_dirty` | Infrastructure: release-record generator (dirty-tree baseline and pass condition; 2026-11-09 backfill review) |
 
 ## Behavioral verification procedure
 
@@ -152,4 +144,4 @@ Before trials, freeze the baseline and candidate commits, model and configuratio
 |---|---|---|---|---|
 | 1.0 | 2026-10-30 | squashed into `36bfe78` | Matrix for REQ-PO-001 to REQ-PO-021 at a pre-squash commit not in this history | PR #13 |
 | 2.0 | 2026-11-08 | `b969150` | Family format; one row per requirement with coverage and gap; rows for tool requirements REQ-PO-022 to REQ-PO-044; untested-gap register; supporting-test table; trace check in CI; results moved to the STR | this PR |
-| 2.1 | 2026-11-10 | review backfill | Infrastructure rows for the release-record generator tests (a dirty tree is never reported as the HEAD baseline; skipped, unrun or failed suites and a failed trace gate never report all passed); the trace check counts only tests unittest discovers | this PR |
+| 2.1 | 2026-11-10 | review backfill | Rows for REQ-PO-045 and REQ-PO-046: the trace check counts only tests unittest runs, and release records mark dirty trees and never report all passed over skips, unrun suites or a failed trace gate | PR #23 |
