@@ -49,10 +49,50 @@ def load():
     return module
 
 
+SUBTEST_TESTS = """import unittest
+
+
+class Sub(unittest.TestCase):
+    def test_pass(self):
+        pass
+
+    def test_two_failing_subtests(self):
+        for i in range(2):
+            with self.subTest(i=i):
+                self.fail()
+"""
+
+SKIPPED_TESTS = """import unittest
+
+
+class Skipped(unittest.TestCase):
+    @unittest.skip("example")
+    def test_one(self):
+        pass
+
+    @unittest.skip("example")
+    def test_two(self):
+        pass
+"""
+
+COLOURED_OUTPUT = (
+    "test_fail (test_c.C.test_fail) ... \x1b[31mFAIL\x1b[0m\n"
+    "test_pass (test_c.C.test_pass) ... \x1b[32mok\x1b[0m\n"
+    "test_skip (test_c.C.test_skip) ... \x1b[33mskipped\x1b[0m 'example'\n"
+    "\n"
+    "----------------------------------------------------------------------\n"
+    "Ran 3 tests in 0.001s\n"
+    "\n"
+    "\x1b[1;31mFAILED\x1b[0m (\x1b[1;31mfailures=1\x1b[0m, \x1b[33mskipped=1\x1b[0m)\n"
+)
+
+
 def result(tests=None, returncode=0, summary="OK", **outcomes):
     counts = {key: 0 for key in ("failures", "errors", "skipped", "expected failures", "unexpected successes")}
     counts.update({key.replace("_", " "): value for key, value in outcomes.items()})
-    return {"returncode": returncode, "tests": tests, "outcomes": counts, "failures": "", "summary": summary, "digest": "0" * 64}
+    passed = max(0, (tests or 0) - sum(counts.values()))
+    return {"returncode": returncode, "tests": tests, "passed": passed, "statuses": 0 if tests is None else 1,
+            "outcomes": counts, "failures": "", "summary": summary, "digest": "0" * 64}
 
 
 def passing(suite_id):
@@ -185,8 +225,55 @@ class GenReleaseDocsTests(unittest.TestCase):
         for expected in ("1 failures", "1 errors", "1 skipped", "1 expected failures", "1 unexpected successes"):
             self.assertIn(expected, problems)
         skipped_only = self.module.parse_suite(0, "Ran 2 tests in 0.001s\n\nOK (skipped=2)\n")
-        self.assertEqual(self.module.suite_problems("S2", skipped_only), ["2 skipped"])
+        self.assertEqual(self.module.suite_problems("S2", skipped_only), ["2 skipped", "2 of 2 tests not passed"])
         self.assertEqual(self.module.tests_passed(skipped_only), 0)
+
+    def run_case(self, source, environ=None):
+        case = self.tmp / "case"
+        case.mkdir()
+        (case / "test_case.py").write_text(source, encoding="utf-8")
+        args = ["-m", "unittest", "discover", "-s", str(case), "-p", "test_*.py", "-v"]
+        with mock.patch.object(self.module, "ROOT", self.tmp), mock.patch.dict("os.environ", environ or {}):
+            return self.module.run_suite(sys.executable, args)
+
+    def test_failing_subtests_do_not_hide_a_passing_method(self):
+        parsed = self.run_case(SUBTEST_TESTS)
+        self.assertEqual(parsed["tests"], 2)
+        self.assertEqual(parsed["outcomes"]["failures"], 2)
+        self.assertEqual(self.module.tests_passed(parsed), 1)
+        problems = self.module.suite_problems("S5", parsed)
+        self.assertIn("2 failures", problems)
+        self.assertIn("1 of 2 tests not passed", problems)
+
+    def test_subtest_failures_are_reported_in_metrics(self):
+        code, text = self.report(suites={"S5": self.run_case(SUBTEST_TESTS)})
+        self.assertNotEqual(code, 0)
+        self.assertNotIn("all structural suites passed", text)
+        self.assertIn("| 6 / 5 |", text)
+        self.assertIn("1 of 2 tests not passed", text)
+
+    def test_coloured_output_is_parsed(self):
+        parsed = self.module.parse_suite(1, COLOURED_OUTPUT)
+        self.assertEqual(parsed["tests"], 3)
+        self.assertEqual(parsed["outcomes"]["failures"], 1)
+        self.assertEqual(parsed["outcomes"]["skipped"], 1)
+        self.assertEqual(self.module.tests_passed(parsed), 1)
+        self.assertNotIn("\x1b", parsed["summary"])
+        coloured_skip = self.module.parse_suite(0, "Ran 2 tests in 0.001s\n\n\x1b[1;32mOK\x1b[0m (\x1b[33mskipped=2\x1b[0m)\n")
+        self.assertIn("2 skipped", self.module.suite_problems("S2", coloured_skip))
+
+    def test_suites_run_without_colour_when_colour_is_forced(self):
+        parsed = self.run_case(SKIPPED_TESTS, {"PYTHON_COLORS": "1", "FORCE_COLOR": "1"})
+        self.assertEqual(parsed["returncode"], 0)
+        self.assertEqual(parsed["outcomes"]["skipped"], 2)
+        self.assertEqual(self.module.suite_problems("S2", parsed), ["2 skipped", "2 of 2 tests not passed"])
+        env = self.module.suite_env()
+        self.assertEqual((env["PYTHON_COLORS"], env["NO_COLOR"]), ("0", "1"))
+        self.assertNotIn("FORCE_COLOR", env)
+
+    def test_missing_status_line_is_a_problem(self):
+        parsed = self.module.parse_suite(0, "test_a (m.C.test_a) ... ok\n\nRan 1 test in 0.001s\n")
+        self.assertIn("no unittest status line", self.module.suite_problems("S5", parsed))
 
 
 if __name__ == "__main__":

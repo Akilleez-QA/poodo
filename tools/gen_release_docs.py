@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -39,6 +40,7 @@ SUITES = (
 )
 UNITTEST_SUITES = {"S2", "S5"}
 NON_PASS = ("failures", "errors", "skipped", "expected failures", "unexpected successes")
+ANSI = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")
 DISCLAIMER = (
     "> Organized after [NPR 7150.2D](https://nodis3.gsfc.nasa.gov/displayAll.cfm?Internal_ID=N_PR_7150_002D_&page_name=all), "
     "[NASA-STD-8739.8B](https://standards.nasa.gov/standard/nasa/nasa-std-87398) and the "
@@ -66,26 +68,42 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def strip_ansi(text: str) -> str:
+    return ANSI.sub("", text)
+
+
 def parse_suite(returncode: int, output: str) -> dict:
+    output = strip_ansi(output)
     ran = re.findall(r"^Ran (\d+) tests?", output, re.MULTILINE)
     outcomes = dict.fromkeys(NON_PASS, 0)
-    for status in re.findall(r"^(?:OK|FAILED|NO TESTS RAN)(?: \((.+)\))?$", output, re.MULTILINE):
+    statuses = re.findall(r"^(?:OK|FAILED|NO TESTS RAN)(?: \((.+)\))?$", output, re.MULTILINE)
+    for status in statuses:
         for part in status.split(","):
             key, _, value = part.strip().rpartition("=")
             if key in outcomes and value.isdigit():
                 outcomes[key] += int(value)
+    tests = sum(int(count) for count in ran) if ran else None
+    passed = len(re.findall(r" \.\.\. ok$", output, re.MULTILINE))
     last = [line for line in output.strip().splitlines() if line.strip()]
     return {
         "returncode": returncode,
-        "tests": sum(int(count) for count in ran) if ran else None,
+        "tests": tests,
+        "passed": min(passed, tests or 0),
+        "statuses": len(statuses),
         "outcomes": outcomes,
         "summary": last[-1] if last else "",
         "digest": hashlib.sha256(output.encode("utf-8")).hexdigest(),
     }
 
 
+def suite_env() -> dict[str, str]:
+    env = {key: value for key, value in os.environ.items() if key not in {"FORCE_COLOR", "PYTHON_COLORS", "NO_COLOR"}}
+    env.update(PYTHON_COLORS="0", NO_COLOR="1")
+    return env
+
+
 def run_suite(python: str, args: list[str]) -> dict:
-    result = subprocess.run([python, *args], cwd=ROOT, check=False, capture_output=True, text=True)
+    result = subprocess.run([python, *args], cwd=ROOT, check=False, capture_output=True, text=True, env=suite_env())
     return parse_suite(result.returncode, result.stdout + result.stderr)
 
 
@@ -98,14 +116,18 @@ def suite_problems(suite_id: str, result: dict) -> list[str]:
             problems.append("no unittest result line")
         elif result["tests"] == 0:
             problems.append("ran no tests")
+        if result["tests"] is not None and not result.get("statuses"):
+            problems.append("no unittest status line")
     for key in NON_PASS:
         if result["outcomes"].get(key):
             problems.append(f"{result['outcomes'][key]} {key}")
+    if suite_id in UNITTEST_SUITES and result["tests"] and tests_passed(result) < result["tests"]:
+        problems.append(f"{result['tests'] - tests_passed(result)} of {result['tests']} tests not passed")
     return problems
 
 
 def tests_passed(result: dict) -> int:
-    return max(0, (result["tests"] or 0) - sum(result["outcomes"].get(key, 0) for key in NON_PASS))
+    return min(result.get("passed", 0), result["tests"] or 0)
 
 
 def tree_state() -> tuple[str, list[str]]:
