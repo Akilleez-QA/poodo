@@ -24,7 +24,7 @@ All commands run from the checkout root and are identical to the `run:` steps in
 | ID | Level | What it covers | Location | Command |
 |---|---|---|---|---|
 | S1 | System (package) | The real package passes the package validator | `scripts/validate_skill.py` | `python scripts/validate_skill.py` |
-| S2 | Unit / regression | 61 subprocess tests: 39 of the capsule checker and 22 of the package validator on a temporary package copy | `evals/test_check_capsule.py`, `evals/test_validate_skill.py` | `python -m unittest discover -s evals -p 'test_*.py' -v` |
+| S2 | Unit / regression | 94 tests: 39 subprocess tests of the capsule checker, 22 of the package validator on a temporary package copy, and 33 of the agent tool surface (MCP server and CLI as subprocesses, tool functions in process) | `evals/test_check_capsule.py`, `evals/test_validate_skill.py`, `evals/test_poodo_tools.py` | `python -m unittest discover -s evals -p 'test_*.py' -v` |
 | S3 | System (fixture) | The valid capsule fixture passes | `evals/fixtures/valid-capsule.yaml` | `python scripts/check_capsule.py evals/fixtures/valid-capsule.yaml` |
 | S4 | Documentation | Requirement, design, test and link trace | `tools/check_trace.py` | `python tools/check_trace.py` |
 | S5 | Unit | 23 tests: 10 of the trace checker and 13 of the release-document generator | `tools/test_check_trace.py`, `tools/test_gen_release_docs.py` | `python -m unittest discover -s tools -p 'test_*.py' -v` |
@@ -61,6 +61,7 @@ Not measured: no coverage tool is pinned in `requirements-dev.txt`. Requirement 
 | `evals/fixtures/valid-capsule.yaml` | Passing capsule, revision 2 with a parent | S2, S3 |
 | `evals/fixtures/invalid-resurrection.yaml` | Prediction status returns after a terminal state | S2 |
 | `evals/fixtures/invalid-truncated-evidence.yaml` | Truncated evidence supporting a claim | S2 |
+| `evals/fixtures/tools/orient-20-paths.json`, `research-record.json`, `terminal-claim.json`, `PRECOMMIT.md` | Passing inputs for the agent tools; tests mutate copies in memory | S2 |
 | Generated in temporary directories | Mutated copies of the valid capsule; mutated copies of the package for the package validator; minimal repositories for the trace checker | S2, S5 |
 
 All fixtures are synthetic.
@@ -74,7 +75,7 @@ Automated suites S1–S5: the code is the procedure. Run them with the commands 
 - Purpose / requirements: every Full and Partial row in the verification matrix; REQ-PO-044.
 - Preconditions: clean checkout; Python 3.10 and 3.14 available.
 - Steps: for each version, create a virtual environment, install `requirements-dev.txt`, run S1–S5.
-- Expected result and pass/fail criteria: each command exits 0; S2 reports `Ran 61 tests` and `OK`; S5 reports `Ran 23 tests` and `OK`; S4 prints `trace check passed`.
+- Expected result and pass/fail criteria: each command exits 0; S2 reports `Ran 94 tests` and `OK`; S5 reports `Ran 23 tests` and `OK`; S4 prints `trace check passed`.
 - Last run: 2026-11-08, see the STR in [reports](reports/README.md) for the commit and output digests.
 
 ### TP-2 — Behavioral trial
@@ -109,3 +110,4 @@ See the [verification matrix](verification-matrix.md).
 |---|---|---|---|---|
 | 1.0 | 2026-11-08 | `b969150` | Initial baseline | this PR |
 | 1.1 | 2026-11-10 | findings sweep `07d033a`..`89c25a9` | S2 adds package-validator tests; S5 counts updated; S6 ruff and S7 gitleaks added; validator test-gap risks removed | this PR |
+| 1.2 | 2026-11-16 | feat/poodo-tools | S2 adds 33 agent tool tests (94 total); agent tool fixtures | draft PR |

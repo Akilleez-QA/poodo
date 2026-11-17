@@ -1,0 +1,84 @@
+{
+  "paths": [
+    {
+      "name": "Minimal correction",
+      "mechanism": "Patch the one failing parser branch and rerun its regression test"
+    },
+    {
+      "name": "Known-good replication",
+      "mechanism": "Rebuild the last passing release byte for byte and compare outputs"
+    },
+    {
+      "name": "Differential experiment",
+      "mechanism": "Run old and new parser on the same corpus and diff the results"
+    },
+    {
+      "name": "Instrumentation",
+      "mechanism": "Add counters at the queue boundary to observe drop rates directly"
+    },
+    {
+      "name": "Rollback",
+      "mechanism": "Restore the previous deploy and watch whether the error rate returns to baseline"
+    },
+    {
+      "name": "Containment",
+      "mechanism": "Route affected tenants to a read-only mode while the cause is found"
+    },
+    {
+      "name": "Alternate architecture",
+      "mechanism": "Replace the shared cache with per-worker caches to remove contention"
+    },
+    {
+      "name": "Dependency substitution",
+      "mechanism": "Swap the serializer library for the standard one and compare behaviour"
+    },
+    {
+      "name": "Independent reproduction",
+      "mechanism": "Ask a second operator on separate hardware to reproduce from the report alone"
+    },
+    {
+      "name": "Staged rollout",
+      "mechanism": "Ship to one percent of traffic with automatic halt on the error budget"
+    },
+    {
+      "name": "Defer pending evidence",
+      "mechanism": "Wait for the weekly batch that exercises the rare input before deciding"
+    },
+    {
+      "name": "Stop and take no action",
+      "mechanism": "Accept the current rate because its cost is below the fix's risk"
+    },
+    {
+      "name": "Escalate to domain authority",
+      "mechanism": "Hand the timing question to the network owner who controls the link"
+    },
+    {
+      "name": "Load test",
+      "mechanism": "Replay peak traffic in staging to see whether failures scale with load"
+    },
+    {
+      "name": "Configuration audit",
+      "mechanism": "Diff live settings against the pinned baseline to find drift"
+    },
+    {
+      "name": "Fault injection",
+      "mechanism": "Kill the primary during writes to test the failover path deliberately"
+    },
+    {
+      "name": "Bisect history",
+      "mechanism": "Binary-search commits between good and bad builds to find the change"
+    },
+    {
+      "name": "User interview",
+      "mechanism": "Ask the three reporting users what they did just before the failure"
+    },
+    {
+      "name": "Formal model",
+      "mechanism": "Write a small state-machine model of the retry logic and check its invariants"
+    },
+    {
+      "name": "Retire the feature",
+      "mechanism": "Remove the rarely used export path that triggers the failure"
+    }
+  ]
+}

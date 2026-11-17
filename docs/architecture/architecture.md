@@ -17,7 +17,7 @@
 
 This document explains how POODO meets its [requirements](../requirements/requirements.md), for a reader about to change it. It expands [How POODO works](../guides/explanation/how-it-works.md).
 
-POODO is an instruction package that an agent host executes. Its entry point is [SKILL.md](../../SKILL.md), metadata version 3.1. The host supplies the model, tools, permissions, web search, subagents and native goals. The skill cannot create those capabilities or increase the user's authority. Two Python scripts check package and capsule structure. They do not run the reasoning loop and cannot show that it works.
+POODO is an instruction package that an agent host executes. Its entry point is [SKILL.md](../../SKILL.md), metadata version 3.1. The host supplies the model, tools, permissions, web search, subagents and native goals. The skill cannot create those capabilities or increase the user's authority. Two Python scripts check package and capsule structure, and a third, `scripts/poodo_tools.py`, exposes structural checks to agents as a stdio MCP server and CLI. None of them runs the reasoning loop or can show that it works.
 
 ## 2. Design decisions and trade-offs
 
@@ -34,6 +34,9 @@ These summarize decisions visible in the source. No ADRs exist.
 | Validators check structure only and say so in their output | A validator that grades reasoning | A self-authored check cannot corroborate behavior | REQ-PO-028, REQ-PO-037 |
 | Mega Observe is optional, explicit and budget-gated | Make the expensive mode default | Cost and padding risk | REQ-PO-017, REQ-PO-018 |
 | One pinned dependency (PyYAML) | Schema libraries | Small install surface | REQ-PO-044 |
+| Agent tools as a hand-written stdio MCP server plus CLI in one script | An MCP SDK; HTTP transport; prose-only guidance | No new dependency; any MCP host or shell can call the same checks; stdio keeps it local with no listening port | REQ-PO-047, REQ-PO-048 |
+| Agent tools expose only deterministic structural or lexical checks, each result carrying a disclaimer and `not_checked` | Tools that grade reasoning, fetch sources or call a model | A self-authored check cannot corroborate behavior; a tool result must not read as runtime validation | REQ-PO-049, REQ-PO-053, REQ-PO-054, REQ-PO-055 |
+| `precommit_hash` hashes exact bytes, or canonical JSON for records | Normalizing line endings or whitespace before hashing | Digests must match `sha256sum` receipts and Cstack record digests byte for byte | REQ-PO-052 |
 
 ## 3. Architecture overview
 
@@ -51,6 +54,8 @@ flowchart LR
     V -->|checks| M
     V -->|checks| R
     C[scripts/check_capsule.py] -->|checks one file| K[(capsule YAML)]
+    P[scripts/poodo_tools.py] -->|imports validate| C
+    P -->|MCP stdio or CLI| AG[Agent or host]
     T[evals/test_check_capsule.py] -->|runs| C
     E[evals/manifest.yaml, mega-observe.yaml] -.->|designed trials, never run| S
   end
@@ -87,7 +92,8 @@ flowchart LR
 | Optional research charter | `references/mega-observe.md`, `assets/mega-observe-charter.yaml` | Mega Observe protocol and the charter to fill before a run | Explicit request → charter, budget gates | REQ-PO-017, REQ-PO-018 |
 | Package validator | `scripts/validate_skill.py` | Required files, front matter, host metadata, reference links, placeholders, schema literals, execute bits | Checkout → exit 0 or 1 with messages | REQ-PO-022, REQ-PO-023, REQ-PO-024, REQ-PO-025, REQ-PO-026, REQ-PO-027, REQ-PO-028, REQ-PO-044 |
 | Capsule checker | `scripts/check_capsule.py` | Structure and referential integrity of one capsule file | YAML file → exit 0, 1 or 2 with messages | REQ-PO-009, REQ-PO-029, REQ-PO-030, REQ-PO-031, REQ-PO-032, REQ-PO-033, REQ-PO-034, REQ-PO-035, REQ-PO-036, REQ-PO-037, REQ-PO-038, REQ-PO-039, REQ-PO-040, REQ-PO-041, REQ-PO-042, REQ-PO-043, REQ-PO-044 |
-| Checker regression tests | `evals/test_check_capsule.py`, `evals/test_validate_skill.py`, `evals/fixtures/` | Subprocess tests of the capsule checker and the package validator | Fixtures and mutated package copies → pass/fail | infrastructure (verifies both validators) |
+| Agent tool surface | `scripts/poodo_tools.py` | Stdio MCP server and CLI exposing `check_capsule`, `precommit_hash`, `orient_paths_check`, `research_gate_check` and `terminal_claim_check`; bounded input; scoped results | JSON-RPC line or file → result object; exit 0, 1 or 2 | REQ-PO-047, REQ-PO-048, REQ-PO-049, REQ-PO-050, REQ-PO-051, REQ-PO-052, REQ-PO-053, REQ-PO-054, REQ-PO-055 |
+| Checker regression tests | `evals/test_check_capsule.py`, `evals/test_validate_skill.py`, `evals/test_poodo_tools.py`, `evals/fixtures/` | Subprocess and in-process tests of the capsule checker, the package validator and the agent tool surface | Fixtures and mutated package copies → pass/fail | infrastructure (verifies the validators and the tool surface) |
 | Behavioral evaluation material | `evals/manifest.yaml`, `evals/mega-observe.yaml`, `evals/protocol.md`, `evals/rubric.md`, `evals/run-record.template.yaml` | 14 base cases, 8 Mega Observe probes, grading rules, run-record template | Frozen configuration → graded trials (none recorded) | infrastructure (verification material for REQ-PO-001 to REQ-PO-021) |
 | Examples | `examples/` | Synthetic illustrations, not measured runs | — | infrastructure (documentation) |
 | Docs tooling | `tools/` | Trace and link check; generator for the VDD and STR | Docs and test tree → pass/fail; generated reports | REQ-PO-045, REQ-PO-046 |
@@ -99,6 +105,8 @@ flowchart LR
 
 **Validators.** Each is a single-threaded command that reads files, prints, and exits. `validate_skill.py` collects every error before exiting, so one run reports all failures. `check_capsule.py` loads YAML with a loader that rejects duplicate and non-string keys, then runs `validate()`, which also collects all errors. Neither writes files, opens a network connection or starts a subprocess. The regression tests start the checker as a subprocess with `sys.executable`.
 
+**Agent tool surface.** `poodo_tools.py serve` reads one JSON-RPC message per line from standard input, answers on standard output and exits at end of input. It is single-threaded and handles one request at a time. Each tool call validates its arguments, runs a pure check function and returns a result object; `check_capsule` calls `check_capsule.validate()` in process. The CLI subcommands read one file and call the same functions. It writes no files, opens no network connection and starts no subprocess.
+
 **Docs tooling.** `check_trace.py` reads the SRS, verification matrix, SDD, data dictionary, CI workflow, test files and all Markdown, and imports `check_capsule.py` to read its field constants. `gen_release_docs.py` refuses a dirty tracked tree, runs the five suites with each `--python` interpreter, calls the trace check, optionally queries `gh`, and writes two files.
 
 ## 6. Interfaces
@@ -107,9 +115,10 @@ flowchart LR
 |---|---|
 | Skill package as loaded by an Agent Skills or Codex host | [icd-skill-host.md](../icd/icd-skill-host.md) |
 | Capsule checker command and capsule file format | [icd-capsule-checker.md](../icd/icd-capsule-checker.md) |
+| Agent tools: stdio MCP server and CLI | [icd-agent-tools.md](../icd/icd-agent-tools.md) |
 | Cstack's byte-pinned snapshot and its `poodo_core` | [icd-cstack.md](../icd/icd-cstack.md) |
 
-Internal interface: `check_trace.py` imports `check_capsule.py` and reads `REQUIRED`, `OPTIONAL` and the six value sets. Renaming those constants breaks the trace check.
+Internal interfaces: `poodo_tools.py` imports `check_capsule.py` and uses `validate`, `UniqueKeyLoader`, `ID_RE` and the state sets. `check_trace.py` imports `check_capsule.py` and reads `REQUIRED`, `OPTIONAL` and the six value sets. Renaming those constants breaks the trace check.
 
 ## 7. Failure handling and containment
 
@@ -117,6 +126,7 @@ Internal interface: `check_trace.py` imports `check_capsule.py` and reads `REQUI
 - `check_capsule.py` separates load failure (exit 2) from structural failure (exit 1).
 - An oversize capsule fails unless it declares `capsule_overflow`; the checker never truncates.
 - The skill fails closed on capability: no web research means stop before Orient (REQ-PO-010); missing goal tools mean no simulated goal state (REQ-PO-015).
+- The MCP server answers malformed, oversize or unknown messages with a JSON-RPC error and keeps serving; argument problems return a tool result with `isError: true` and status `error`.
 - Nothing is retried automatically.
 
 ## 8. Resource use
@@ -125,7 +135,7 @@ The validators read a few small files and hold one capsule in memory. The capsul
 
 ## 9. Quality attributes
 
-- Maintainability: one entry file, one reference per concern, two small scripts, one pinned dependency (REQ-PO-044).
+- Maintainability: one entry file, one reference per concern, three small scripts, one pinned dependency (REQ-PO-044).
 - Testability: the capsule checker is a pure `validate(data, raw_text, ceiling)` function behind a thin CLI; tests drive the CLI. `evals/test_validate_skill.py` runs the package validator against a temporary copy of the package.
 - Portability: CI runs on Python 3.10 and 3.14 on `ubuntu-latest`. Other operating systems are untested.
 - Security: no network, no writes, `yaml.SafeLoader` subclass, no `eval`. See the [SMP §7](../plan/software-management-plan.md#7-security-privacy-and-secure-coding).
@@ -145,3 +155,4 @@ The validators read a few small files and hold one capsule in memory. The capsul
 | 1.0 | 2026-10-30 | squashed into `36bfe78` | Context, components, control flow and boundaries | PR #12 |
 | 2.0 | 2026-11-08 | `b969150` | Family format; decisions table; Mermaid static and runtime views; components with requirement allocation; execution, failure, resource and quality sections; docs tooling | this PR |
 | 2.1 | 2026-11-10 | findings sweep `07d033a`..`89c25a9` | Package-validator tests; ruff and gitleaks CI jobs | this PR |
+| 2.2 | 2026-11-16 | feat/poodo-tools | Agent tool surface component, decisions, execution concept, interface and failure handling | draft PR |

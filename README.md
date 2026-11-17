@@ -108,19 +108,39 @@ For real work, give the agent a concrete problem, the outcome you want and what 
 | [`SKILL.md`](SKILL.md) | The skill: 14 rules, the loop, when to load each reference |
 | [`references/`](references/) | One file per stage or topic: evidence rules, contradictions, handoffs, output formats |
 | [`agents/openai.yaml`](agents/openai.yaml) | Codex display name and the explicit-only setting |
-| [`scripts/`](scripts/) | `validate_skill.py` and `check_capsule.py`: structure checks, no model needed ([how to run](docs/guides/how-to/evaluation.md#check-the-files)) |
+| [`scripts/`](scripts/) | `validate_skill.py` and `check_capsule.py`: structure checks, no model needed ([how to run](docs/guides/how-to/evaluation.md#check-the-files)). `poodo_tools.py`: the same kind of checks for agents, as a stdio MCP server or CLI ([agent tools](#agent-tools)) |
 | [`evals/`](evals/) | 14 behavioral test cases, 8 Mega Observe probes, a scoring rubric, and 13 checker tests |
 | [`examples/`](examples/README.md) | Four hand-written scenarios, not measured runs |
 | [`assets/`](assets/) | Charter template for Mega Observe |
 | [`tools/`](tools/) | Documentation trace check and release-document generator |
 | [`docs/`](docs/README.md) | Guides and engineering records |
 
+## Agent tools
+
+`scripts/poodo_tools.py` lets an agent call POODO's deterministic checks as tools instead of following them only as prose. It has no dependency beyond PyYAML and needs no model or network. Register it with an MCP host as a stdio server:
+
+```json
+{"mcpServers": {"poodo": {"command": "python", "args": ["/path/to/poodo/scripts/poodo_tools.py", "serve"]}}}
+```
+
+or run the same checks from a shell, for example `python scripts/poodo_tools.py terminal-claim-check claim.json`.
+
+| Tool | Checks |
+|---|---|
+| `check_capsule` | A continuation capsule, with the capsule checker's rules |
+| `precommit_hash` | SHA-256 of a precommit's exact bytes (or a record's canonical JSON) and a `sha256sum`-style receipt line, so a receipt can bind to it |
+| `orient_paths_check` | Exactly 20 named paths with mechanisms, no duplicates; flags near-duplicates |
+| `research_gate_check` | The Observe research record names queries, dated sources with URLs, conflicts and non-entailments |
+| `terminal_claim_check` | The five terminal-claim fields, and no unqualified "fixed", "resolved", "successful" or "validated" without a passed criterion |
+
+Every result says it is structural: a pass means the record has the right shape, not that it is true, that research or testing happened, or that the reasoning is good. The [agent tools ICD](docs/icd/icd-agent-tools.md) has the full contract.
+
 ## Status and limitations
 
 - Method version 3.1, capsule schema `POODO_CONTINUATION/3.0`. No release is tagged; install from `main` and note the commit.
 - **No measured effect yet.** The 14 behavioral cases and 8 probes are designs. None has been run and graded, and there is no baseline comparison.
 - The checkers test structure only. `validate_skill.py` has no tests of its failure paths, and several capsule-checker rules are untested. The [verification matrix](docs/verification/verification-matrix.md#untested-requirement-gaps) lists every gap.
-- The skill grants no permissions and adds no tools. It relies on the host for web search, subagents and permissions. Do not use its output as the only basis for a safety, engineering or regulated decision. See [Limitations](docs/guides/explanation/limitations.md).
+- The skill grants no permissions. Its only tools are the read-only structural checks in `poodo_tools.py`, which a host must register; they never fetch sources, call a model or judge truth. It relies on the host for web search, subagents and permissions. Do not use its output as the only basis for a safety, engineering or regulated decision. See [Limitations](docs/guides/explanation/limitations.md).
 - An optional, much larger research mode, [Mega Observe](references/mega-observe.md), runs only when you ask for it by name. It can cost hundreds of dollars in model use. The agent must agree a scope and spending limit with you first; the repository ships no spending cap of its own.
 
 ## Learn more

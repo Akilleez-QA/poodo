@@ -1,6 +1,6 @@
 # Command reference
 
-Every command runs from the checkout root with Python 3.10 or newer and PyYAML 6.0.3 installed (`python -m pip install -r requirements-dev.txt`). None needs a model, an API key or network access, except that `tools/gen_release_docs.py` calls `gh` when it is available. Output below was captured on 2026-11-08 with Python 3.14.9.
+Every command runs from the checkout root with Python 3.10 or newer and PyYAML 6.0.3 installed (`python -m pip install -r requirements-dev.txt`). None needs a model, an API key or network access, except that `tools/gen_release_docs.py` calls `gh` when it is available. Output below was captured on 2026-11-08 with Python 3.14.9, except the `poodo_tools.py` section, captured on 2026-11-16 with Python 3.13 on macOS.
 
 ## `validate_skill.py`
 
@@ -83,6 +83,44 @@ INVALID: could not load capsule: [Errno 2] No such file or directory: 'nonexiste
 ```
 
 The fields and allowed values are in the [data dictionary](../../data/data-dictionary.md). The interface is in the [capsule checker ICD](../../icd/icd-capsule-checker.md).
+
+## `poodo_tools.py`
+
+Agent tools: the same five structural checks as a stdio MCP server and as subcommands. The full contract, including every rule and bound, is in the [agent tools ICD](../../icd/icd-agent-tools.md).
+
+```text
+usage: poodo_tools.py [-h] [--json] {serve,check-capsule,precommit-hash,orient-paths-check,research-gate-check,terminal-claim-check} ...
+```
+
+| Subcommand | What it checks |
+|---|---|
+| `serve` | Runs the MCP server on standard input and output (newline-delimited JSON-RPC 2.0) until end of input |
+| `check-capsule FILE [--hard-token-ceiling N]` | The capsule checker's rules; also accepts a payload wrapped in both continuation delimiters |
+| `precommit-hash FILE [--record] [--name NAME] [--receipt FILE]` | SHA-256 of the file's exact bytes and a `<digest>  <name>` receipt line, as `sha256sum` writes it; `--record` hashes a JSON or YAML record as canonical JSON instead; `--receipt` compares with recorded digests |
+| `orient-paths-check FILE` | `{paths: [{name, mechanism}, ...]}`: exactly 20 entries with no duplicates; near-duplicates are warnings |
+| `research-gate-check FILE` | An Observe research record: queries, at least two dated sources with URLs, conflicts, non-entailments |
+| `terminal-claim-check FILE` | The five terminal-claim fields, and unqualified fixed, resolved, successful or validated without a passed criterion |
+
+| Exit | Output |
+|---|---|
+| 0 | `<tool>: pass` (or `ok`), warnings, then the disclaimer |
+| 1 | `<tool>: fail`, one `- error: <reason>` line per error, warnings, then the disclaimer |
+| 2 | `<tool>: error` and the rejected-input reason |
+
+`--json` (before the subcommand) prints the full result object instead. Example:
+
+```text
+$ python scripts/poodo_tools.py precommit-hash evals/fixtures/tools/PRECOMMIT.md --name PRECOMMIT.md
+precommit_hash: ok
+sha256: 8fed6bf28474ce5cc3c00c658e2b7852aa4d8b20660fa04d8ba88eb349599dc1
+receipt_line: 8fed6bf28474ce5cc3c00c658e2b7852aa4d8b20660fa04d8ba88eb349599dc1  PRECOMMIT.md
+A digest binds exact bytes only. It does not show that the precommit was written before observation, that its content is sound, or that anything it predicts happened.
+$ python scripts/poodo_tools.py orient-paths-check evals/fixtures/tools/orient-20-paths.json
+orient_paths_check: pass
+Structural check only: a pass is not a truth or quality judgement. Structural conformance is not runtime validation.
+```
+
+To give an MCP host the tools, register `python /path/to/poodo/scripts/poodo_tools.py serve` as a stdio server.
 
 ## `tools/check_trace.py`
 

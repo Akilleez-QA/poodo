@@ -6,6 +6,8 @@ Tooling and evaluation-rule fixes.
 
 ### Added
 
+- `scripts/poodo_tools.py`: an agent tool surface with no new dependency. A stdio MCP server (newline-delimited JSON-RPC 2.0: `initialize`, `ping`, `tools/list`, `tools/call`) and matching CLI subcommands expose five structural checks: `check_capsule` (wraps the capsule checker), `precommit_hash` (SHA-256 of exact precommit bytes in `sha256sum` receipt form, or of a record's canonical JSON), `orient_paths_check` (exactly 20 distinct named paths; near-duplicates flagged), `research_gate_check` (queries, dated sources with URLs, conflicts, non-entailments) and `terminal_claim_check` (the five terminal-claim fields; unqualified success words without a passed criterion). Every result states that a structural pass is not a truth or quality judgement. Input is bounded. Requirements REQ-PO-047 to REQ-PO-055 (Proposed), the agent tools ICD, data dictionary §7 and 33 tests in `evals/test_poodo_tools.py` with synthetic fixtures under `evals/fixtures/tools/`.
+
 - Add root coding-agent guidance and weekly Dependabot checks for GitHub Actions and Python dependencies, with up to three open PRs per ecosystem.
 - Engineering records organized after NASA documentation guidance (self-assessed Class E analog, not safety-critical; not a NASA compliance determination): software management plan, compliance matrix, data dictionary, test plan, assurance record, skill-host and capsule-checker interface documents, limitations page, command reference, user manual map, and a generated version description and test report.
 - Requirements REQ-PO-022 to REQ-PO-044 for the validators, each traced to a test or listed as an untested gap.
