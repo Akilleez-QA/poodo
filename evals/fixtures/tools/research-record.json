@@ -1,0 +1,37 @@
+{
+  "queries": [
+    "parser regression after serializer upgrade",
+    {
+      "query": "serializer upgrade did not cause parser failures",
+      "disconfirming": true
+    }
+  ],
+  "sources": [
+    {
+      "url": "https://docs.example.org/serializer/changelog",
+      "title": "Serializer changelog",
+      "published": "2026-09-30",
+      "retrieved": "2026-11-16",
+      "authority": "maintainer",
+      "evidence_family": "EF-demo-maintainer"
+    },
+    {
+      "url": "https://standards.example.net/encoding/spec",
+      "title": "Encoding specification",
+      "updated": "2025-04-02",
+      "retrieved": "2026-11-16",
+      "authority": "standard",
+      "evidence_family": "EF-demo-standard"
+    }
+  ],
+  "conflicts": [
+    "The changelog calls the change compatible; the specification allows the old form to be rejected."
+  ],
+  "non_entailments": [
+    "Neither source shows that the local failure comes from the upgrade."
+  ],
+  "implications": [
+    "A differential run on the old and new serializer would separate the two explanations."
+  ],
+  "gate": "satisfied"
+}

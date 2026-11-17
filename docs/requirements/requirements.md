@@ -24,13 +24,13 @@ This document gives every POODO requirement a stable ID, one "shall" statement, 
 POODO has two kinds of requirement:
 
 - **Agent-behavior requirements** (REQ-PO-001 to REQ-PO-021). These are obligations that [SKILL.md](../../SKILL.md) places on an agent that runs the skill. An agent host executes them; no code in this repository does. They are accepted obligations, not inspected code behavior. Their only planned verification is a recorded, graded agent trial. No such trial has been recorded, so all 21 are untested gaps in the [verification matrix](../verification/verification-matrix.md).
-- **Tool requirements** (REQ-PO-022 onward). These describe what the two Python validators do, as read from [validate_skill.py](../../scripts/validate_skill.py) and [check_capsule.py](../../scripts/check_capsule.py). Each one is either covered by a named automated test or listed as an untested gap.
+- **Tool requirements** (REQ-PO-022 onward). These describe what the two Python validators do, as read from [validate_skill.py](../../scripts/validate_skill.py) and [check_capsule.py](../../scripts/check_capsule.py), and what the agent tool surface in [poodo_tools.py](../../scripts/poodo_tools.py) does (REQ-PO-047 to REQ-PO-055). Each one is either covered by a named automated test or listed as an untested gap.
 
 Out of scope: the agent host, its model, its tools, its permissions, web search, subagents and native goals. The skill cannot create or grant any of these. Trust assumption: the person invoking the skill is the only source of authority; capsule and evaluation files are untrusted input to the validators.
 
 ### 1.3 System overview
 
-POODO is an instruction package with two structural validators. It sits in the Cstack family as a skill/tool. Cstack carries a byte-pinned partial snapshot of it. See the [design description](../architecture/architecture.md) and the interface documents for the [skill host](../icd/icd-skill-host.md), the [capsule checker](../icd/icd-capsule-checker.md) and [Cstack](../icd/icd-cstack.md).
+POODO is an instruction package with two structural validators and an agent tool surface (a stdio MCP server and CLI) that exposes structural checks to agents. It sits in the Cstack family as a skill/tool. Cstack carries a byte-pinned partial snapshot of it. See the [design description](../architecture/architecture.md) and the interface documents for the [skill host](../icd/icd-skill-host.md), the [capsule checker](../icd/icd-capsule-checker.md) and [Cstack](../icd/icd-cstack.md).
 
 ## 2. Requirement record format
 
@@ -480,6 +480,100 @@ The capsule checker shall require claims to carry non-empty text (not null, blan
 - Verification: T
 - Status: Baselined
 
+## 5a. Functional requirements: agent tool surface
+
+These describe `scripts/poodo_tools.py`. Every check it exposes is structural or lexical. None judges truth, quality or whether research or testing happened.
+
+### REQ-PO-047 — MCP server
+
+`scripts/poodo_tools.py serve` shall run a newline-delimited JSON-RPC 2.0 MCP server on standard input and output that answers `initialize`, `ping`, `tools/list` and `tools/call`, lists exactly the five checks as read-only tools, sends nothing for notifications, and answers parse errors, batches, invalid requests, unknown methods, unknown tools and oversize lines with a JSON-RPC error while continuing to serve.
+
+- Rationale: Agents need POODO's deterministic checks as callable tools, not only as prose (Cstack agent organization, workstream D).
+- Derivation: `scripts/poodo_tools.py` (`handle_message`, `serve`)
+- Allocated to: SDD §4 (agent tool surface)
+- Verification: T
+- Status: Proposed
+
+### REQ-PO-048 — CLI parity
+
+Each MCP check shall also be available as a `scripts/poodo_tools.py` subcommand that reads one file and returns the same result object, exiting 0 on pass, 1 on fail and 2 on rejected or unreadable input.
+
+- Rationale: Hosts without MCP, CI and people must get the same answer as an MCP client.
+- Derivation: `scripts/poodo_tools.py` (`main`)
+- Allocated to: SDD §4 (agent tool surface)
+- Verification: T
+- Status: Proposed
+
+### REQ-PO-049 — Result scope and disclaimer
+
+Every check result shall carry `status`, `scope`, `errors`, `warnings` and a `disclaimer` stating that a structural pass is not a truth or quality judgement (for `precommit_hash`, that a digest binds bytes only), and every structural result lists what it did not check in `not_checked`.
+
+- Rationale: A tool result read by an agent must not be mistaken for runtime validation (`SKILL.md` invariant 1).
+- Derivation: `scripts/poodo_tools.py` (`_result`, `precommit_digest`); `SKILL.md` (invariants 1 and 2)
+- Allocated to: SDD §4 (agent tool surface)
+- Verification: T
+- Status: Proposed
+
+### REQ-PO-050 — Input bounds
+
+The agent tool surface shall reject, with status `error` and before any check runs, arguments that are not an object, carry unknown or missing fields, or exceed the documented bounds of 262,144 characters of text, 200 list items, 32 nesting levels, per-field length limits and 1,048,576 bytes per MCP message.
+
+- Rationale: Tool input comes from agents and is untrusted; bounded input keeps the server responsive.
+- Derivation: `scripts/poodo_tools.py` (`_check_args`, `_text`, `_list`, `serve`)
+- Allocated to: SDD §4 (agent tool surface)
+- Verification: T
+- Status: Proposed
+
+### REQ-PO-051 — Capsule check tool
+
+The `check_capsule` tool shall return exactly the errors of `check_capsule.validate()` for the given capsule payload, accepting the payload with or without both `POODO_CONTINUATION_V3_0` delimiters and rejecting a payload with only one, a duplicate key or a YAML error as input errors.
+
+- Rationale: One capsule rule set, reachable from both the CLI checker and agents.
+- Derivation: `scripts/poodo_tools.py` (`tool_check_capsule`); `scripts/check_capsule.py`
+- Allocated to: SDD §4 (agent tool surface)
+- Verification: T
+- Status: Proposed
+
+### REQ-PO-052 — Precommit hash
+
+The `precommit_hash` tool shall return the SHA-256 of a document's exact UTF-8 bytes without normalization (matching `sha256sum PRECOMMIT.md > receipt/precommit.sha256`) or of a record's canonical JSON (sorted keys, compact separators, ASCII), a `<digest>  <name>` receipt line, and, when given a receipt, the receipt lines whose digest matches.
+
+- Rationale: Receipts must bind the exact precommit bytes so a later edit is detectable (`SKILL.md` invariant 5); EndoForge records PRECOMMIT.md digests in sha256sum form and Cstack hashes records as canonical JSON.
+- Derivation: `scripts/poodo_tools.py` (`tool_precommit_hash`, `precommit_digest`, `canonical_json`); `SKILL.md` (invariant 5)
+- Allocated to: SDD §4 (agent tool surface)
+- Verification: T
+- Status: Proposed
+
+### REQ-PO-053 — Orient paths check
+
+The `orient_paths_check` tool shall fail a path list unless it has exactly 20 entries, each with a non-empty name and mechanism, and no two entries share a normalized name, the same name words in another order or the same normalized mechanism, and report pairs whose name or mechanism word sets have a Jaccard overlap of at least 0.75 as warnings.
+
+- Rationale: Makes the mandatory 20-path divergence (`SKILL.md` invariant 10) checkable without claiming to judge material distinctness.
+- Derivation: `scripts/poodo_tools.py` (`tool_orient_paths_check`); `references/orient.md`
+- Allocated to: SDD §4 (agent tool surface)
+- Verification: T
+- Status: Proposed
+
+### REQ-PO-054 — Research gate check
+
+The `research_gate_check` tool shall fail an Observe research record that lacks at least one query, at least two sources each with a distinct http or https URL and an ISO 8601 `retrieved` date, a `conflicts` list or at least one non-entailment, and warn when no query is marked disconfirming, all sources share one host or evidence family, a source has no published or updated date, conflicts are empty or no implication is recorded.
+
+- Rationale: Makes the research record that gates Orient (`SKILL.md` invariant 9) checkable for shape without fetching or judging sources.
+- Derivation: `scripts/poodo_tools.py` (`tool_research_gate_check`); `references/observe.md`
+- Allocated to: SDD §4 (agent tool surface)
+- Verification: T
+- Status: Proposed
+
+### REQ-PO-055 — Terminal claim check
+
+The `terminal_claim_check` tool shall fail a terminal claim whose five fields are missing or blank, whose states are outside the capsule checker's allowed values, whose `required_runtime_observation` of `none` cites no evidence ID, whose remaining observation has `none` as controller, whose `passed` outcome has no passed acceptance entry naming artifact and environment, or whose claim or summary uses an unnegated fixed, resolved, successful or validated without such a passed entry and a `passed` outcome.
+
+- Rationale: Makes the terminal claim contract in `SKILL.md` checkable for shape and for the forbidden unqualified success words.
+- Derivation: `scripts/poodo_tools.py` (`tool_terminal_claim_check`); `SKILL.md` (terminal claim contract); `references/output-patterns.md`
+- Allocated to: SDD §4 (agent tool surface)
+- Verification: T
+- Status: Proposed
+
 ## 6. Interface requirements
 
 The interface requirements are the tool requirements above, read against their interface documents:
@@ -488,6 +582,7 @@ The interface requirements are the tool requirements above, read against their i
 |---|---|---|
 | Skill host (Agent Skills / Codex) | REQ-PO-001, REQ-PO-019, REQ-PO-022 to REQ-PO-027 | [icd-skill-host.md](../icd/icd-skill-host.md) |
 | Capsule checker CLI and capsule file | REQ-PO-009, REQ-PO-029 to REQ-PO-043 | [icd-capsule-checker.md](../icd/icd-capsule-checker.md) |
+| Agent tools (stdio MCP server and CLI) | REQ-PO-047 to REQ-PO-055 | [icd-agent-tools.md](../icd/icd-agent-tools.md) |
 | Cstack snapshot and `poodo_core` | none: Cstack owns its side (see ICD §7) | [icd-cstack.md](../icd/icd-cstack.md) |
 
 ## 7. Non-functional requirements
@@ -548,3 +643,4 @@ Automated tests and CI demonstrations qualify the tool requirements. A recorded,
 | 2.0 | 2026-11-08 | `b969150` | Family metadata and disclaimer; record fields (derivation, allocation, status); one "shall" per requirement (wording only, meaning unchanged, in 003, 006, 008, 010, 012); tool requirements REQ-PO-022 to REQ-PO-044 read from the validators; open items; N/A categories. The 1.0 baseline commit `01e6c60` is not in this repository's history | this PR |
 | 2.1 | 2026-11-10 | review backfill | Added REQ-PO-045 (trace check counts only tests unittest runs) and REQ-PO-046 (release record baseline and result) | PR #23 |
 | 2.2 | 2026-11-10 | findings sweep `07d033a`..`89c25a9` | Verification lines for REQ-PO-022 to REQ-PO-027, REQ-PO-029 to REQ-PO-031, REQ-PO-034 and REQ-PO-038 to REQ-PO-043 no longer name an untested gap (UG-22 to UG-37 closed by new tests); REQ-PO-028 adds a test. Behaviour now stated: REQ-PO-025 rejects non-UTF-8 reference files; REQ-PO-026 matches each schema literal as a standalone token; REQ-PO-039 and REQ-PO-043 treat null, empty list and empty mapping as empty; REQ-PO-041 reports duplicates in a fixed order | this PR |
+| 2.3 | 2026-11-16 | feat/poodo-tools | Added REQ-PO-047 to REQ-PO-055 for the agent tool surface (`scripts/poodo_tools.py`), status Proposed | draft PR |

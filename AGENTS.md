@@ -13,7 +13,7 @@ method; structural checks do not establish behavioral improvement.
 | `references/` | Phase guidance, evidence rules, continuity, and evaluation design |
 | `agents/openai.yaml` | Codex metadata and explicit invocation policy |
 | `assets/` | Mega Observe charter template |
-| `scripts/` | Package and continuation capsule validators |
+| `scripts/` | Package and continuation capsule validators; agent tool surface (stdio MCP server and CLI) |
 | `tools/` | Documentation trace check and release-document generator |
 | `evals/` | Behavioral cases, rubric, protocol, run-record template, and checker tests and fixtures |
 | `examples/` | Synthetic illustrative scenarios |

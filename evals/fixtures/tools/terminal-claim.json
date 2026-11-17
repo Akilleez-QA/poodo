@@ -1,0 +1,14 @@
+{
+  "delivery_state": "checked",
+  "outcome_state": "unobserved",
+  "highest_justified_claim": "The patch is authored and its unit tests pass; the intended-use behaviour is unobserved.",
+  "required_runtime_observation": "Run the nightly import on the staging dataset and compare row counts.",
+  "who_controls_next_test": "user",
+  "acceptance": [
+    {
+      "id": "AC-demo-import",
+      "criterion": "Nightly import completes with matching row counts",
+      "status": "pending"
+    }
+  ]
+}

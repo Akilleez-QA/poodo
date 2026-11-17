@@ -18,7 +18,7 @@ This plan merges the development, maintenance (SWEHB 5.04), assurance (5.17) and
 ## 1. Software classification (self-assessed)
 
 - Assessed against: NPR 7150.2D Appendix D and NASA-STD-8739.8B §4.2, as an analog. POODO is not NASA software and no NASA authority has reviewed this assessment.
-- Analog class: **Class E** (general-purpose research/technology software). Rationale: POODO is a set of instructions and two validators that run on general-purpose computers; it supports no ground test, flight test or operation; a defect affects the productivity of an individual user or a small group; it is not used for decisions about an operational system.
+- Analog class: **Class E** (general-purpose research/technology software). Rationale: POODO is a set of instructions, two validators and a structural-check tool server that run on general-purpose computers; it supports no ground test, flight test or operation; a defect affects the productivity of an individual user or a small group; it is not used for decisions about an operational system.
 - Not Class F: not Agency business or IT infrastructure.
 - Safety-critical determination (SWE-205 analog): **not safety-critical.** POODO meets none of the five criteria in NASA-STD-8739.8B §4.2, and no hazard analysis assigns it a hazard cause, control or mitigation. The skill can steer an agent that has tools, but the host and the user hold every permission; the skill grants none (REQ-PO-008).
 - Documentation baseline: Class E with voluntary adoption of the Class D documentation set; see the [compliance matrix](compliance-matrix.md).
@@ -143,3 +143,4 @@ The [documentation index](../README.md) lists every control document and guide.
 |---|---|---|---|---|
 | 1.0 | 2026-11-08 | `b969150` | Initial baseline | this PR |
 | 1.1 | 2026-11-10 | findings sweep `07d033a`..`89c25a9` | §4 and §6: ruff and gitleaks are CI gates (F-7 closed); R-2 mitigated by validator tests (F-4, F-5 closed) | this PR |
+| 1.2 | 2026-11-16 | feat/poodo-tools | §1 rationale names the structural-check tool server | draft PR |

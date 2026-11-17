@@ -26,6 +26,7 @@ POODO is an agent skill that makes a coding agent show its evidence before it ac
 | Capsule fields and allowed values | [Data dictionary](data/data-dictionary.md) |
 | The stage-by-stage instructions the agent loads | [Reference library](../references/), indexed in the [reference guide](guides/reference/README.md) |
 | How POODO talks to an agent host | [Skill host interface](icd/icd-skill-host.md) |
+| Call POODO's checks as MCP or CLI tools | [Agent tools interface](icd/icd-agent-tools.md), [command reference](guides/reference/cli.md#poodo_toolspy) |
 
 ## Understand
 
@@ -53,6 +54,7 @@ This is a skill/tool repository, so the software management plan also holds the 
 | Design | POODO-SDD | 5.13 | [architecture/architecture.md](architecture/architecture.md) |
 | Interface: skill host | POODO-ICD-HOST | 5.02 | [icd/icd-skill-host.md](icd/icd-skill-host.md) |
 | Interface: capsule checker | POODO-ICD-CAPSULE | 5.02 | [icd/icd-capsule-checker.md](icd/icd-capsule-checker.md) |
+| Interface: agent tools | POODO-ICD-TOOLS | 5.02 | [icd/icd-agent-tools.md](icd/icd-agent-tools.md) |
 | Interface: Cstack | POODO-ICD-CSTACK | 5.02 | [icd/icd-cstack.md](icd/icd-cstack.md) |
 | Data dictionary | POODO-DD | 5.07 | [data/data-dictionary.md](data/data-dictionary.md) |
 | Test plan and procedures | POODO-STP | 5.10, 5.14 | [verification/test-plan.md](verification/test-plan.md) |
